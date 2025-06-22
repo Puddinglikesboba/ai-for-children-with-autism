@@ -35,13 +35,15 @@ async def health_check():
 @app.post("/analyze_sandbox/", response_model=AnalysisResult)
 async def analyze_sandbox(
     file: UploadFile = File(..., description="Uploaded sandbox photo"),
-    user_id: Optional[str] = Form(None, description="User ID (optional)")
+    user_id: Optional[str] = Form(None, description="User ID (optional)"),
+    prompt: Optional[str] = Form(None, description="Custom prompt for the analysis (optional)")
 ):
     """
     Analyze sandbox scene
     
     - **file**: Uploaded sandbox photo (supports JPEG, PNG formats)
     - **user_id**: User ID (optional)
+    - **prompt**: A custom prompt to guide the psychological analysis (optional)
     
     Returns JSON response containing scene description and psychological analysis
     """
@@ -68,7 +70,7 @@ async def analyze_sandbox(
         caption = generate_caption(image_bytes)
         
         # Generate psychological analysis
-        analysis = generate_psychological_analysis(caption, user_id)
+        analysis = generate_psychological_analysis(caption, user_id, prompt)
         
         # Create analysis result
         result = AnalysisResult(
@@ -84,7 +86,7 @@ async def analyze_sandbox(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error occurred while processing sandbox analysis: {str(e)}")
+        logger.error(f"Error occurred while processing sandbox analysis: {e}")
         raise HTTPException(
             status_code=500,
             detail=f"Internal server error: {str(e)}"
@@ -121,7 +123,7 @@ async def general_exception_handler(request, exc):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
-        "main:app",
+        "app.main:app",
         host="0.0.0.0",
         port=8000,
         reload=True,
