@@ -35,7 +35,7 @@ if not os.path.exists('scores'):
     os.makedirs('scores')
 
 # Emotion categories
-EMOTIONS = ['angry', 'disgust', 'happy', 'sadness', 'neutral', 'fear', 'surprised']
+EMOTIONS = ['angry', 'disgust', 'happy', 'sadness', 'neutral', 'fear']
 
 # A mapping to normalize emotion names, treating 'sad' and 'sadness' as the same.
 EMOTION_MAP = {
@@ -45,8 +45,7 @@ EMOTION_MAP = {
     'disgust': 'disgust',
     'happy': 'happy',
     'neutral': 'neutral',
-    'fear': 'fear',
-    'surprised': 'surprised'
+    'fear': 'fear'
 }
 
 def load_all_scores(score_dir):

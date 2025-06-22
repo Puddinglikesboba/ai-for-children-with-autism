@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const emotions = ['happy', 'sad', 'angry', 'surprised', 'neutral', 'fear', 'disgust'];
+const emotions = ['happy', 'sad', 'angry', 'neutral', 'fear', 'disgust'];
 
 const EmotionGame = () => {
   const [gameState, setGameState] = useState('start'); // 'start', 'playing', 'round_end'
