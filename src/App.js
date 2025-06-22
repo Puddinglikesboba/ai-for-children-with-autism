@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import Summary from './Summary';
 
-function App() {
+function Game() {
   const [gameStarted, setGameStarted] = useState(false);
   const [currentRound, setCurrentRound] = useState(1);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -164,6 +166,19 @@ function App() {
           </p>
         </div>
 
+        {/* Navigation */}
+        <div className="flex justify-center mb-6">
+          <Link
+            to="/summary"
+            className="group relative inline-flex items-center justify-center px-6 py-3 text-lg font-semibold text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-xl shadow-lg hover:shadow-xl hover:bg-blue-100 transform hover:scale-105 transition-all duration-300"
+          >
+            <span className="flex items-center space-x-2">
+              <span>📊</span>
+              <span>View Progress Summary</span>
+            </span>
+          </Link>
+        </div>
+
         {/* Game Container */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20">
           {/* Game Stats */}
@@ -271,15 +286,27 @@ function App() {
                   </div>
                 </div>
               </div>
-              <button
-                onClick={startNewRound}
-                className="group relative inline-flex items-center justify-center px-12 py-4 text-xl font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
-              >
-                <span className="flex items-center space-x-2">
-                  <span>🔄</span>
-                  <span>Play Again</span>
-                </span>
-              </button>
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={startNewRound}
+                  className="group relative inline-flex items-center justify-center px-8 py-3 text-lg font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                >
+                  <span className="flex items-center space-x-2">
+                    <span>🔄</span>
+                    <span>Play Again</span>
+                  </span>
+                </button>
+                
+                <Link
+                  to="/summary"
+                  className="group relative inline-flex items-center justify-center px-8 py-3 text-lg font-semibold text-blue-600 bg-blue-50 border-2 border-blue-200 rounded-xl shadow-lg hover:shadow-xl hover:bg-blue-100 transform hover:scale-105 transition-all duration-300"
+                >
+                  <span className="flex items-center space-x-2">
+                    <span>📊</span>
+                    <span>View Summary</span>
+                  </span>
+                </Link>
+              </div>
             </div>
           )}
 
@@ -410,6 +437,17 @@ function App() {
         }
       `}</style>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Game />} />
+        <Route path="/summary" element={<Summary />} />
+      </Routes>
+    </Router>
   );
 }
 
