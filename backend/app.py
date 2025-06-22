@@ -265,3 +265,12 @@ if __name__ == '__main__':
     print("📁 Scores will be saved to:", os.path.abspath(SCORES_DIR))
     print("🌐 Server will run on: http://localhost:5001")
     app.run(debug=True, host='0.0.0.0', port=5001) 
+
+
+
+
+@app.route('/api/hello')
+def hello_world():
+    return jsonify({'message': 'Hello from Flask!'})
+
+
