@@ -1,0 +1,513 @@
+/* Sandbox.css - 心理学沙盘专业样式 */
+
+.sandbox-container {
+  height: 100vh;
+  background: linear-gradient(135deg, #f4f1eb 0%, #e8e0d0 50%, #d4c4a8 100%);
+  padding: 0.25rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow: hidden;
+  position: relative;
+}
+
+.sandbox-content {
+  height: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.sandbox-header {
+  display: none;
+}
+
+/* ====== 布局：沙盘居中，右侧工具栏和心理医生 ====== */
+
+/* 中间沙盘区域 */
+.sandbox-area {
+  width: 800px;
+  height: calc(100vh - 0.5rem);
+  background: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(139, 69, 19, 0.15);
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.area-title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #8B4513;
+  margin-bottom: 1rem;
+  text-align: center;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* 实际沙盘容器 */
+.sandbox-container-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #f4e4bc 0%, #e6d7b8 25%, #d4c4a8 50%, #c2b280 75%, #b8a67a 100%);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  cursor: crosshair;
+  box-shadow: inset 0 4px 12px rgba(139, 69, 19, 0.2);
+  border: 3px solid #DEB887;
+  flex: 1;
+  min-height: 0;
+}
+
+.sandbox-container-inner.dragging {
+  cursor: grabbing;
+}
+
+.sandbox-container-inner.resizing {
+  cursor: nw-resize;
+}
+
+/* 物品层 */
+.items-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.placed-item {
+  position: absolute;
+  pointer-events: auto;
+}
+
+.item-wrapper {
+  position: relative;
+  cursor: move;
+  transition: transform 0.2s ease;
+}
+
+.item-wrapper:hover {
+  transform: scale(1.02);
+}
+
+.placed-image {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  pointer-events: none;
+  transition: width 0.2s ease, height 0.2s ease;
+  border-radius: 0.5rem;
+}
+
+.resize-handle {
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #4a90e2, #357abd);
+  border: 2px solid white;
+  border-radius: 50%;
+  cursor: nw-resize;
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.resize-handle:hover {
+  background: linear-gradient(135deg, #357abd, #2d5aa0);
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.placed-item:hover .resize-handle {
+  opacity: 1;
+}
+
+.delete-button {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  color: white;
+  border: 2px solid white;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+
+.placed-item:hover .delete-button {
+  display: flex;
+}
+
+.delete-button:hover {
+  background: linear-gradient(135deg, #c82333, #bd2130);
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.4);
+}
+
+/* 提示文字 */
+.sandbox-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #8B4513;
+  pointer-events: none;
+}
+
+.hint-content {
+  background: #ffffff;
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(139, 69, 19, 0.2);
+  border: 1px solid #e5e7eb;
+}
+
+.hint-title {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+  color: #8B4513;
+  letter-spacing: 0.5px;
+}
+
+.hint-text {
+  font-size: 0.9rem;
+  color: #A0522D;
+  opacity: 0.8;
+}
+
+/* 拖拽提示 */
+.drag-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, rgba(210, 105, 30, 0.9), rgba(205, 133, 63, 0.9));
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  animation: pulse 2s infinite;
+  box-shadow: 0 4px 12px rgba(210, 105, 30, 0.3);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.02);
+  }
+}
+
+/* 右侧面板容器 */
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 400px;
+  flex-shrink: 0;
+  height: calc(100vh - 0.5rem);
+  overflow: hidden;
+}
+
+/* 工具栏 */
+.sandbox-panel {
+  background: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(139, 69, 19, 0.15);
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: calc(50% - 0.375rem);
+  min-height: 350px;
+  overflow: hidden;
+}
+
+.panel-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #8B4513;
+  margin-bottom: 0.75rem;
+  text-align: center;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* 分类标签 */
+.category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.category-tab {
+  padding: 0.4rem 0.8rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.category-tab.active {
+  background: linear-gradient(135deg, #D2691E, #CD853F);
+  color: white;
+  box-shadow: 0 1px 4px rgba(210, 105, 30, 0.3);
+  transform: translateY(-1px);
+}
+
+.category-tab.inactive {
+  background: #f3f4f6;
+  color: #8B4513;
+  border-color: #d1d5db;
+}
+
+.category-tab.inactive:hover {
+  background: #e5e7eb;
+  border-color: #D2691E;
+  transform: translateY(-1px);
+  box-shadow: 0 1px 4px rgba(139, 69, 19, 0.1);
+}
+
+/* 物品网格 */
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 6px;
+}
+
+.items-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.items-grid::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.items-grid::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 2px;
+}
+
+.items-grid::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.item-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  cursor: grab;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  width: 70px;
+  height: 70px;
+  box-shadow: 0 2px 4px rgba(139, 69, 19, 0.1);
+}
+
+.item-card:hover {
+  background: #f3f4f6;
+  border-color: #D2691E;
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 2px 6px rgba(210, 105, 30, 0.2);
+}
+
+.item-card:active {
+  cursor: grabbing;
+  transform: translateY(0) scale(1.01);
+}
+
+.item-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.action-button {
+  padding: 0.4rem 0.8rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  flex: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.clear-button {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  color: white;
+}
+
+.clear-button:hover {
+  background: linear-gradient(135deg, #c82333, #bd2130);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3);
+}
+
+.save-button {
+  background: linear-gradient(135deg, #28a745, #218838);
+  color: white;
+}
+
+.save-button:hover {
+  background: linear-gradient(135deg, #218838, #1e7e34);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+}
+
+/* 心理医生区域 */
+.psychologist-section {
+  background: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(139, 69, 19, 0.15);
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 1400px) {
+  .sandbox-area {
+    width: 700px;
+  }
+  
+  .right-panel {
+    width: 350px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .sandbox-area {
+    width: 600px;
+  }
+  
+  .right-panel {
+    width: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sandbox-content {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .sandbox-area {
+    width: 100%;
+    max-width: 600px;
+    height: 500px;
+  }
+  
+  .right-panel {
+    width: 100%;
+    max-width: 600px;
+    flex-direction: row;
+    gap: 0.5rem;
+    height: 350px;
+  }
+  
+  .sandbox-panel {
+    width: 50%;
+    height: 100%;
+  }
+  
+  .psychologist-section {
+    width: 50%;
+    height: 100%;
+  }
+  
+  .items-grid {
+    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+    gap: 0.4rem;
+  }
+  
+  .item-card {
+    width: 60px;
+    height: 60px;
+    padding: 0.3rem;
+  }
+  
+  .category-tab {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+  }
+  
+  .action-button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+  }
+}
+  

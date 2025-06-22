@@ -1,0 +1,160 @@
+{
+  "people": {
+    "1": {
+      "id": "people-1",
+      "name": "Smiling Boy",
+      "description": "A happy young boy with a cheerful expression",
+      "emotional_significance": "Joy, happiness, innocence, positive emotions"
+    },
+    "2": {
+      "id": "people-2", 
+      "name": "Sad Girl",
+      "description": "A young girl with a sad or melancholic expression",
+      "emotional_significance": "Sadness, vulnerability, emotional pain, need for comfort"
+    },
+    "3": {
+      "id": "people-3",
+      "name": "Doctor",
+      "description": "A medical professional in white coat",
+      "emotional_significance": "Healing, authority, care, medical concerns, trust"
+    },
+    "4": {
+      "id": "people-4",
+      "name": "Smiling Old Lady",
+      "description": "An elderly woman with a warm, gentle smile",
+      "emotional_significance": "Wisdom, warmth, nurturing, family, comfort"
+    },
+    "5": {
+      "id": "people-5",
+      "name": "Anxious Boss",
+      "description": "A stressed or worried business person",
+      "emotional_significance": "Stress, pressure, responsibility, anxiety, work concerns"
+    },
+    "6": {
+      "id": "people-6",
+      "name": "Mythical Female Warrior",
+      "description": "A powerful female warrior from mythology or fantasy",
+      "emotional_significance": "Strength, courage, empowerment, protection, inner power"
+    }
+  },
+  "buildings": {
+    "1": {
+      "id": "building-1",
+      "name": "Small House",
+      "description": "A cozy, small residential house",
+      "emotional_significance": "Home, safety, family, comfort, security"
+    },
+    "2": {
+      "id": "building-2",
+      "name": "Tower",
+      "description": "A tall, imposing tower structure",
+      "emotional_significance": "Isolation, height, observation, power, loneliness"
+    },
+    "3": {
+      "id": "building-3",
+      "name": "Church",
+      "description": "A religious building with spiritual significance",
+      "emotional_significance": "Faith, spirituality, community, peace, guidance"
+    },
+    "4": {
+      "id": "building-4",
+      "name": "Small Bridge",
+      "description": "A small bridge connecting two areas",
+      "emotional_significance": "Connection, transition, overcoming obstacles, journey"
+    },
+    "5": {
+      "id": "building-5",
+      "name": "Castle",
+      "description": "A grand castle or fortress",
+      "emotional_significance": "Protection, fantasy, dreams, strength, imagination"
+    },
+    "6": {
+      "id": "building-6",
+      "name": "Lighthouse",
+      "description": "A lighthouse guiding ships",
+      "emotional_significance": "Guidance, hope, safety, direction, illumination"
+    },
+    "7": {
+      "id": "building-7",
+      "name": "Hospital",
+      "description": "A medical facility for treatment",
+      "emotional_significance": "Healing, care, vulnerability, health concerns, recovery"
+    },
+    "8": {
+      "id": "building-8",
+      "name": "School",
+      "description": "An educational institution",
+      "emotional_significance": "Learning, growth, social interaction, development, knowledge"
+    },
+    "9": {
+      "id": "building-9",
+      "name": "Prison",
+      "description": "A confinement or correctional facility",
+      "emotional_significance": "Restriction, punishment, isolation, control, confinement"
+    },
+    "11": {
+      "id": "building-11",
+      "name": "Horizontal Road Module",
+      "description": "A horizontal road section",
+      "emotional_significance": "Movement, direction, journey, path, travel"
+    },
+    "12": {
+      "id": "building-12",
+      "name": "Vertical Road Module", 
+      "description": "A vertical road section",
+      "emotional_significance": "Movement, direction, journey, path, travel"
+    },
+    "13": {
+      "id": "building-13",
+      "name": "Cross Road Module",
+      "description": "A road intersection",
+      "emotional_significance": "Choices, decisions, crossroads, multiple paths, direction"
+    },
+    "14": {
+      "id": "building-14",
+      "name": "Fence",
+      "description": "A barrier or boundary structure",
+      "emotional_significance": "Boundaries, protection, separation, limits, safety"
+    }
+  },
+  "animals": {
+    "1": {
+      "id": "animal-1",
+      "name": "Lion",
+      "description": "A powerful, majestic lion",
+      "emotional_significance": "Strength, courage, leadership, power, protection"
+    },
+    "2": {
+      "id": "animal-2",
+      "name": "Animal 2",
+      "description": "Another animal figure",
+      "emotional_significance": "Instinct, nature, freedom, companionship"
+    }
+  },
+  "transport": {
+    "1": {
+      "id": "transport-1",
+      "name": "Car",
+      "description": "A personal automobile",
+      "emotional_significance": "Independence, freedom, personal space, mobility"
+    },
+    "2": {
+      "id": "transport-2",
+      "name": "Bus",
+      "description": "A public transportation bus",
+      "emotional_significance": "Community, shared experience, public space, journey"
+    },
+    "3": {
+      "id": "transport-3",
+      "name": "Airplane",
+      "description": "A commercial aircraft",
+      "emotional_significance": "Travel, adventure, distance, escape, freedom"
+    },
+    "4": {
+      "id": "transport-4",
+      "name": "Helicopter",
+      "description": "A helicopter aircraft",
+      "emotional_significance": "Rescue, emergency, aerial view, power, urgency"
+    }
+  }
+} 

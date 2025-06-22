@@ -7,6 +7,10 @@ import requests
 from dotenv import load_dotenv
 import logging
 from logging.handlers import RotatingFileHandler
+import json
+import base64
+from PIL import Image
+import io
 
 # Load environment variables
 load_dotenv()
@@ -30,9 +34,24 @@ app_log.addHandler(my_handler)
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
+# AI API Configuration
+AI_API_KEY = "sk-PocO3bcm6M0xHDNe06C1Da2c124443BeB289D7Ae78A07b23"
+AI_API_URL = "https://api.deepseek.com/v1/chat/completions"
+
 # Create scores directory if it doesn't exist
 if not os.path.exists('scores'):
     os.makedirs('scores')
+
+# Load item catalog
+def load_item_catalog():
+    """Load the item catalog for sandbox analysis"""
+    try:
+        catalog_path = os.path.join('..', 'frontend', 'public', 'assets', 'item', 'item_catalog.json')
+        with open(catalog_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        app_log.error(f"Error loading item catalog: {str(e)}")
+        return {}
 
 # Emotion categories
 EMOTIONS = ['angry', 'disgust', 'happy', 'sadness', 'neutral', 'fear']
@@ -47,6 +66,153 @@ EMOTION_MAP = {
     'neutral': 'neutral',
     'fear': 'fear'
 }
+
+def analyze_sandbox_with_ai(image_file, placed_items):
+    """Analyze sandbox using AI service"""
+    try:
+        # Convert image to base64
+        image_data = image_file.read()
+        image_base64 = base64.b64encode(image_data).decode('utf-8')
+        
+        # Load item catalog
+        item_catalog = load_item_catalog()
+        
+        # Prepare items description
+        items_description = []
+        for item in placed_items:
+            item_id = item['id'].split('-')[0]  # Extract base ID (e.g., 'people-5' -> 'people')
+            category = item_id.split('-')[0]    # Extract category (e.g., 'people')
+            number = item_id.split('-')[1]      # Extract number (e.g., '5')
+            
+            if category in item_catalog and number in item_catalog[category]:
+                item_info = item_catalog[category][number]
+                items_description.append(f"- {item_info['name']}: {item_info['description']} (Emotional significance: {item_info['emotional_significance']})")
+            else:
+                items_description.append(f"- {item['name']}: Unknown item")
+        
+        items_text = "\n".join(items_description)
+        
+        # Prepare AI prompt
+        prompt = f"""You are a professional child psychologist specializing in sandplay therapy. Analyze this sandbox scene and provide insights.
+
+Sandbox Items:
+{items_text}
+
+Please provide:
+1. A clear, descriptive caption of the scene (2-3 sentences)
+2. A psychological analysis focusing on:
+   - Emotional themes and patterns
+   - Potential underlying feelings or concerns
+   - Developmental insights
+   - Therapeutic observations
+   
+Keep the analysis child-friendly, supportive, and constructive. Focus on understanding rather than diagnosing.
+
+Respond in JSON format:
+{{
+  "caption": "Scene description",
+  "analysis": "Psychological analysis",
+  "timestamp": "Current timestamp"
+}}"""
+
+        # Prepare request to AI API
+        headers = {
+            "Authorization": f"Bearer {AI_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "model": "deepseek-chat",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": prompt
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{image_base64}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "max_tokens": 1000,
+            "temperature": 0.7
+        }
+        
+        # Make API request
+        response = requests.post(AI_API_URL, headers=headers, json=payload, timeout=30)
+        
+        if response.status_code == 200:
+            result = response.json()
+            ai_response = result['choices'][0]['message']['content']
+            
+            # Try to parse JSON response
+            try:
+                analysis_result = json.loads(ai_response)
+                analysis_result['timestamp'] = datetime.now().isoformat()
+                return analysis_result
+            except json.JSONDecodeError:
+                # If AI didn't return valid JSON, create a structured response
+                return {
+                    "caption": "A sandbox scene with various items",
+                    "analysis": ai_response,
+                    "timestamp": datetime.now().isoformat()
+                }
+        else:
+            app_log.error(f"AI API error: {response.status_code} - {response.text}")
+            raise Exception(f"AI API request failed: {response.status_code}")
+            
+    except Exception as e:
+        app_log.error(f"Error in AI analysis: {str(e)}")
+        raise e
+
+@app.route('/analyze_sandbox/', methods=['POST'])
+def analyze_sandbox():
+    """Analyze sandbox scene using AI"""
+    try:
+        app_log.info("Received sandbox analysis request")
+        
+        # Check if file is present
+        if 'file' not in request.files:
+            return jsonify({"error": "No file provided"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+        
+        # Get placed items from request
+        placed_items = request.form.get('placed_items', '[]')
+        try:
+            placed_items = json.loads(placed_items)
+        except json.JSONDecodeError:
+            placed_items = []
+        
+        # Analyze with AI
+        analysis_result = analyze_sandbox_with_ai(file, placed_items)
+        
+        app_log.info("Sandbox analysis completed successfully")
+        return jsonify(analysis_result), 200
+        
+    except Exception as e:
+        app_log.error(f"Error in sandbox analysis: {str(e)}")
+        return jsonify({
+            "error": "Analysis failed",
+            "message": str(e)
+        }), 500
+
+@app.route('/')
+def health_check():
+    """Health check endpoint"""
+    return jsonify({
+        "status": "healthy",
+        "message": "Sandbox Analysis Backend is running",
+        "timestamp": datetime.now().isoformat()
+    })
 
 def load_all_scores(score_dir):
     """Load all .npy files from scores directory and combine/normalize data"""
@@ -327,8 +493,8 @@ def run_app():
     # Define the directory for scores
     scores_dir = "scores"
 
-    port = int(os.environ.get('PORT', 5002))
-    app_log.info("🚀 Starting Emotion Recognition Game Backend...")
+    port = int(os.environ.get('PORT', 8000))
+    app_log.info("🚀 Starting Sandbox Analysis Backend...")
     app_log.info(f"📁 Scores will be saved to: {os.path.abspath(scores_dir)}")
     app_log.info(f"🌐 Server will run on: http://localhost:{port}")
     app.run(debug=True, host='0.0.0.0', port=port, use_reloader=False)

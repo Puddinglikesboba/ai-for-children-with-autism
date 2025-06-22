@@ -1,220 +1,408 @@
-"use client";
+// src/components/Sandbox.js
+import React, { useState, useRef } from 'react';
+import PsychologistAgent from './PsychologistAgent';
+import apiService from '../services/api';
+import { createSandboxCanvas, canvasToFile } from '../utils/canvasUtils';
+import './Sandbox.css';
 
-import React, { useState, useRef } from "react";
-import {
-  Heart, Home, TreePine, Sun, Moon, Star, Flower,
-  Car, Plane, Ship, Dog, Cat, Bird, Fish,
-  Crown, Shield, Book, Music, Camera, Gift,
-  Baby, Users, MapPin, Mountain, Waves, Cloud, Rainbow
-} from "lucide-react";
-
-/* ----------------------------- 渲染组件 ----------------------------- */
-const RenderAsset = ({ item, size = 40 }) => {
-  // ↑ size 传 32 用于侧栏，40 用于沙盘
-  if (item.model) {
-    /** 如果未来要渲染 GLB，可在此处换成 react-three/fiber + useGLTF **/
-    return (
-      <div
-        style={{ width: size, height: size }}
-        className="flex items-center justify-center bg-gray-200 text-xs text-gray-600 select-none"
-      >3D</div>
-    );
-  }
-  if (item.img) {
-    return (
-      <img
-        src={item.img}
-        alt={item.name}
-        width={size}
-        height={size}
-        className="object-contain pointer-events-none drop-shadow-lg"
-      />
-    );
-  }
-  const Icon = item.icon;
-  return (
-    <Icon
-      className={`pointer-events-none drop-shadow-lg ${item.color}`}
-      style={{ width: size, height: size }}
-    />
-  );
-};
-
-/* -------------------------- 主沙盘组件 -------------------------- */
+// --- Main Sandbox Component ---
 const SandplayTherapy = () => {
-  /* 状态 */
-  const [placed, setPlaced] = useState([]);
-  const [selectedCat, setSelectedCat] = useState("人物");
-  const [dragGhost, setDragGhost] = useState(false);   // 拖拽高亮
-  const [dragged, setDragged] = useState(null);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const box = useRef(null);
+  /* ------------------------ 状态 ------------------------ */
+  const [placedItems, setPlacedItems] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('People');
+  const [isDragging, setIsDragging] = useState(false);
+  const [draggedItem, setDraggedItem] = useState(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeItem, setResizeItem] = useState(null);
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, size: 0 });
+  const [analysisData, setAnalysisData] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState(null);
+  const sandboxRef = useRef(null);
 
-  /* 物品库：icon | img | model 三选一，后两者准备好后替换即可 */
-  const lib = {
-    人物: [
-      { id: "family",  icon: Users,  img: "", model: "", name: "家庭",  color: "text-blue-600" },
-      { id: "baby",    icon: Baby,   img: "", model: "", name: "婴儿",  color: "text-pink-400" },
-      { id: "self",    icon: Heart,  img: "", model: "", name: "自己",  color: "text-red-500" },
+  /* ---------------------- 物品分类 ---------------------- */
+  const itemCategories = {
+    'People': [
+      { id: 'people-1', image: '/assets/item/people/1.png', name: 'Person 1' },
+      { id: 'people-2', image: '/assets/item/people/2.png', name: 'Person 2' },
+      { id: 'people-3', image: '/assets/item/people/3.png', name: 'Person 3' },
+      { id: 'people-4', image: '/assets/item/people/4.png', name: 'Person 4' },
+      { id: 'people-5', image: '/assets/item/people/5.png', name: 'Person 5' },
+      { id: 'people-6', image: '/assets/item/people/6.png', name: 'Person 6' },
     ],
-    建筑: [
-      { id: "house",   icon: Home,   img: "", model: "", name: "房屋",  color: "text-amber-600" },
-      { id: "castle",  icon: Crown,  img: "", model: "", name: "城堡",  color: "text-purple-600" },
-      { id: "school",  icon: Book,   img: "", model: "", name: "学校",  color: "text-blue-500" },
+    'Buildings': [
+      { id: 'building-1', image: '/assets/item/building/1.png', name: 'Building 1' },
+      { id: 'building-2', image: '/assets/item/building/2.png', name: 'Building 2' },
+      { id: 'building-3', image: '/assets/item/building/3.png', name: 'Building 3' },
+      { id: 'building-4', image: '/assets/item/building/4.png', name: 'Building 4' },
+      { id: 'building-5', image: '/assets/item/building/5.png', name: 'Building 5' },
+      { id: 'building-6', image: '/assets/item/building/6.png', name: 'Building 6' },
+      { id: 'building-7', image: '/assets/item/building/7.png', name: 'Building 7' },
+      { id: 'building-8', image: '/assets/item/building/8.png', name: 'Building 8' },
+      { id: 'building-9', image: '/assets/item/building/9.png', name: 'Building 9' },
+      { id: 'building-11', image: '/assets/item/building/11.png', name: 'Building 11' },
+      { id: 'building-12', image: '/assets/item/building/12.png', name: 'Building 12' },
+      { id: 'building-13', image: '/assets/item/building/13.png', name: 'Building 13' },
+      { id: 'building-14', image: '/assets/item/building/14.png', name: 'Building 14' },
     ],
-    自然: [
-      { id: "tree",  icon: TreePine,  img: "", model: "", name: "树木",  color: "text-green-600" },
-      { id: "mountain", icon: Mountain, img: "", model: "", name: "山峰", color: "text-gray-600" },
-      { id: "waves", icon: Waves, img: "", model: "", name: "海浪", color: "text-cyan-500" },
-      { id: "flower", icon: Flower, img: "", model: "", name: "花朵", color: "text-pink-500" },
-      { id: "sun", icon: Sun, img: "", model: "", name: "太阳", color: "text-yellow-500" },
-      { id: "moon", icon: Moon, img: "", model: "", name: "月亮", color: "text-indigo-400" },
-      { id: "star", icon: Star, img: "", model: "", name: "星星", color: "text-yellow-400" },
-      { id: "cloud", icon: Cloud, img: "", model: "", name: "云朵", color: "text-gray-400" },
-      { id: "rainbow", icon: Rainbow, img: "", model: "", name: "彩虹", color: "text-purple-500" },
+    'Animals': [
+      { id: 'animal-1', image: '/assets/item/animal/1.png', name: 'Animal 1' },
+      { id: 'animal-2', image: '/assets/item/animal/2.png', name: 'Animal 2' },
     ],
-    动物: [
-      { id: "dog", icon: Dog, img: "", model: "", name: "小狗", color: "text-amber-700" },
-      { id: "cat", icon: Cat, img: "", model: "", name: "小猫", color: "text-gray-600" },
-      { id: "bird", icon: Bird, img: "", model: "", name: "鸟儿", color: "text-blue-400" },
-      { id: "fish", icon: Fish, img: "", model: "", name: "鱼儿", color: "text-cyan-600" },
-    ],
-    交通: [
-      { id: "car", icon: Car, img: "", model: "", name: "汽车", color: "text-red-600" },
-      { id: "plane", icon: Plane, img: "", model: "", name: "飞机", color: "text-blue-600" },
-      { id: "ship", icon: Ship, img: "", model: "", name: "船只", color: "text-cyan-700" },
-    ],
-    物品: [
-      { id: "shield", icon: Shield, img: "", model: "", name: "盾牌", color: "text-gray-700" },
-      { id: "music", icon: Music, img: "", model: "", name: "音乐", color: "text-purple-500" },
-      { id: "camera", icon: Camera, img: "", model: "", name: "相机", color: "text-gray-800" },
-      { id: "gift", icon: Gift, img: "", model: "", name: "礼物", color: "text-red-500" },
-      { id: "location", icon: MapPin, img: "", model: "", name: "地点", color: "text-red-400" },
-    ],
+    'Transport': [
+      { id: 'transport-1', image: '/assets/item/transport/1.png', name: 'Transport 1' },
+      { id: 'transport-2', image: '/assets/item/transport/2.png', name: 'Transport 2' },
+      { id: 'transport-3', image: '/assets/item/transport/3.png', name: 'Transport 3' },
+      { id: 'transport-4', image: '/assets/item/transport/4.png', name: 'Transport 4' },
+    ]
   };
 
-  /* 侧栏拖出 */
+  /* ----------------------- 事件 ----------------------- */
   const handleDragStart = (e, item) => {
-    setDragGhost(true);
-    e.dataTransfer.setData("json", JSON.stringify(item));
+    setIsDragging(true);
+    const itemData = {
+      id: item.id,
+      name: item.name,
+      image: item.image
+    };
+    e.dataTransfer.setData('text/plain', JSON.stringify(itemData));
   };
-  const handleDragEnd = () => setDragGhost(false);
 
-  /* 放到沙盘 */
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
   const handleDrop = (e) => {
     e.preventDefault();
-    setDragGhost(false);
-    const data = JSON.parse(e.dataTransfer.getData("json"));
-    const rect = box.current.getBoundingClientRect();
-    setPlaced(arr => ([
-      ...arr,
-      {
-        ...data,
-        x: e.clientX - rect.left - 20,
-        y: e.clientY - rect.top - 20,
-        id: `${data.id}-${Date.now()}`
-      },
-    ]));
+    const rect = sandboxRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const itemData = JSON.parse(e.dataTransfer.getData('text/plain'));
+    
+    // 根据原始物品数据重建物品
+    const originalItem = Object.values(itemCategories).flat().find(item => item.id === itemData.id);
+    
+    const newItem = {
+      id: `${itemData.id}-${Date.now()}`,
+      name: itemData.name,
+      image: itemData.image,
+      x: x - 25,
+      y: y - 25,
+      size: 50 // 默认大小
+    };
+    
+    setPlacedItems(prev => [...prev, newItem]);
+    setIsDragging(false);
   };
-  const allowDrop = (e) => e.preventDefault();
 
-  /* 沙盘内再次拖动 */
-  const beginMove = (e, item) => {
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handlePlacedItemMouseDown = (e, item) => {
+    e.preventDefault();
     e.stopPropagation();
-    const rect = box.current.getBoundingClientRect();
-    setDragged(item);
-    setOffset({ x: e.clientX - rect.left - item.x, y: e.clientY - rect.top - item.y });
+    const rect = sandboxRef.current.getBoundingClientRect();
+    setDraggedItem(item);
+    setDragOffset({
+      x: e.clientX - rect.left - item.x,
+      y: e.clientY - rect.top - item.y
+    });
+    setIsDragging(true);
   };
-  const move = (e) => {
-    if (!dragged) return;
-    const rect = box.current.getBoundingClientRect();
-    const nx = e.clientX - rect.left - offset.x;
-    const ny = e.clientY - rect.top - offset.y;
-    const maxX = rect.width - 40;
-    const maxY = rect.height - 40;
-    setPlaced(p => p.map(it => it.id === dragged.id ? { ...it, x: Math.max(0, Math.min(nx, maxX)), y: Math.max(0, Math.min(ny, maxY)) } : it));
-  };
-  const endMove = () => setDragged(null);
 
-  /* 其他操作 */
-  const remove = (id) => setPlaced(p => p.filter(it => it.id !== id));
-  const clear  = () => setPlaced([]);
-  const save   = () => {
-    const blob = new Blob([JSON.stringify(placed, null, 2)], { type: "application/json" });
+  const handleMouseMove = (e) => {
+    if (draggedItem && isDragging && !isResizing) {
+      const rect = sandboxRef.current.getBoundingClientRect();
+      const newX = e.clientX - rect.left - dragOffset.x;
+      const newY = e.clientY - rect.top - dragOffset.y;
+      
+      // 边界检查
+      const maxX = rect.width - draggedItem.size;
+      const maxY = rect.height - draggedItem.size;
+      const boundedX = Math.max(0, Math.min(newX, maxX));
+      const boundedY = Math.max(0, Math.min(newY, maxY));
+      
+      setPlacedItems(prev => 
+        prev.map(item => 
+          item.id === draggedItem.id 
+            ? { ...item, x: boundedX, y: boundedY }
+            : item
+        )
+      );
+    } else if (resizeItem && isResizing) {
+      const rect = sandboxRef.current.getBoundingClientRect();
+      const deltaX = e.clientX - resizeStart.x;
+      const deltaY = e.clientY - resizeStart.y;
+      const delta = Math.max(deltaX, deltaY);
+      
+      const newSize = Math.max(30, Math.min(200, resizeStart.size + delta));
+      
+      setPlacedItems(prev => 
+        prev.map(item => 
+          item.id === resizeItem.id 
+            ? { ...item, size: newSize }
+            : item
+        )
+      );
+    }
+  };
+
+  const handleMouseUp = () => {
+    setDraggedItem(null);
+    setIsDragging(false);
+    setDragOffset({ x: 0, y: 0 });
+    setIsResizing(false);
+    setResizeItem(null);
+    setResizeStart({ x: 0, y: 0, size: 0 });
+  };
+
+  const handleResizeStart = (e, item) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizing(true);
+    setResizeItem(item);
+    setResizeStart({
+      x: e.clientX,
+      y: e.clientY,
+      size: item.size
+    });
+  };
+
+  const removeItem = (e, itemId) => {
+    e.stopPropagation();
+    setPlacedItems(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  const clearSandbox = () => {
+    setPlacedItems([]);
+  };
+
+  const saveScene = () => {
+    const sceneData = JSON.stringify(placedItems, null, 2);
+    const blob = new Blob([sceneData], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "沙盘场景.json"; a.click();
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sandbox-scene.json';
+    a.click();
     URL.revokeObjectURL(url);
   };
 
-  /* ----------------------------- UI ----------------------------- */
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 p-4 font-sans">
-      <div className="max-w-6xl mx-auto">
-        <header className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-amber-800 mb-2">心理沙盘游戏</h1>
-          <p className="text-amber-600">拖拽物品表达内心世界，素材就绪后可自动替换图片 / 3D 模型</p>
-        </header>
+  // 分析沙盘
+  const analyzeSandbox = async () => {
+    if (placedItems.length === 0) {
+      setAnalysisError('Please place some items in the sandbox before analyzing.');
+      return;
+    }
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* 侧栏 */}
-          <aside className="bg-white rounded-xl shadow-lg p-4">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">物品选择</h2>
-            {/* 分类 */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {Object.keys(lib).map(cat => (
-                <button key={cat}
-                  onClick={() => setSelectedCat(cat)}
-                  className={`px-3 py-1 rounded-full text-sm ${selectedCat === cat ? "bg-amber-500 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}>
-                  {cat}
-                </button>
-              ))}
-            </div>
-            {/* 列表 */}
-            <div className="grid grid-cols-3 gap-3">
-              {lib[selectedCat].map(item => (
-                <div key={item.id} draggable onDragStart={e => handleDragStart(e, item)} onDragEnd={handleDragEnd}
-                  className="flex flex-col items-center p-3 bg-gray-50 rounded-lg cursor-move hover:bg-gray-100 border-2 border-transparent hover:border-amber-300">
-                  <RenderAsset item={item} size={32} />
-                  <span className="text-xs text-gray-600 mt-1 text-center">{item.name}</span>
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+
+    try {
+      // 创建sandbox canvas
+      const container = sandboxRef.current;
+      const rect = container.getBoundingClientRect();
+      const canvas = createSandboxCanvas(container, rect.width, rect.height);
+      
+      // 转换为文件
+      const imageFile = await canvasToFile(canvas, 'sandbox.png');
+      
+      // 发送到backend进行分析，包含放置的物品数据
+      const result = await apiService.analyzeSandbox(imageFile, 'user-123', placedItems);
+      
+      // 更新分析数据
+      setAnalysisData({
+        caption: result.caption,
+        analysis: result.analysis,
+        timestamp: result.timestamp
+      });
+      
+      console.log('Analysis result:', result);
+      
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      setAnalysisError(error.message || 'Failed to analyze sandbox. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // 处理心理医生agent的分析更新
+  const handleAnalysisUpdate = (analysis) => {
+    setAnalysisData(analysis);
+  };
+
+  /* ----------------------- UI ----------------------- */
+  return (
+    <div className="sandbox-container">
+      <div className="sandbox-content">
+        {/* 中间沙盘区域 */}
+        <div className="sandbox-area">
+          <h2 className="area-title">Sandbox</h2>
+          <div
+            ref={sandboxRef}
+            className={`sandbox-container-inner ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''}`}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          >
+            {/* 物品层 */}
+            <div className="items-layer">
+              {placedItems.map(item => (
+                <div
+                  key={item.id}
+                  className="placed-item"
+                  style={{ left: item.x, top: item.y }}
+                >
+                  <div
+                    className="item-wrapper"
+                    onMouseDown={(e) => handlePlacedItemMouseDown(e, item)}
+                    title="Drag to move, double-click to delete"
+                    onDoubleClick={(e) => removeItem(e, item.id)}
+                  >
+                    <img 
+                      src={item.image} 
+                      alt={item.name}
+                      className="placed-image"
+                      style={{ width: item.size, height: item.size }}
+                      draggable={false}
+                    />
+                    <button
+                      className="delete-button"
+                      onClick={(e) => removeItem(e, item.id)}
+                      title="Delete"
+                    >
+                      ×
+                    </button>
+                    <div
+                      className="resize-handle"
+                      onMouseDown={(e) => handleResizeStart(e, item)}
+                      title="Drag to resize"
+                    />
+                  </div>
                 </div>
               ))}
             </div>
-            {/* 操作 */}
-            <div className="mt-6 space-y-2">
-              <button onClick={clear} className="w-full py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">清空沙盘</button>
-              <button onClick={save}  className="w-full py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">保存场景</button>
-            </div>
-          </aside>
 
-          {/* 沙盘 */}
-          <section className="lg:col-span-3">
-            <div className="bg-white rounded-xl shadow-lg p-4">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">你的沙盘世界</h2>
-              <div ref={box}
-                className={`relative w-full h-[640px] rounded-lg border-4 overflow-hidden border-amber-300 bg-gradient-to-b from-sky-200 via-amber-100 to-amber-200 ${dragGhost ? "ring-4 ring-amber-400 ring-offset-2" : ""}`}
-                onDrop={handleDrop} onDragOver={allowDrop}
-                onMouseMove={move} onMouseUp={endMove} onMouseLeave={endMove}>
-                {/* 放置物品 */}
-                {placed.map(it => (
-                  <div key={it.id}
-                    style={{ left: it.x, top: it.y }}
-                    className="absolute group select-none"
-                    onMouseDown={e => beginMove(e, it)} onDoubleClick={() => remove(it.id)}>
-                    <RenderAsset item={it} size={40} />
-                    <button onClick={() => remove(it.id)}
-                      className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 hover:bg-red-600 flex items-center justify-center">×</button>
+            {/* 提示文字 */}
+            {placedItems.length === 0 && (
+              <div className="sandbox-hint">
+                <div className="hint-content">
+                  <p className="hint-title">Drag items here</p>
+                  <p className="hint-text">Start creating</p>
+                </div>
+              </div>
+            )}
+
+            {/* 拖拽提示 */}
+            {isDragging && (
+              <div className="drag-hint">
+                <div className="drag-text">
+                  Drop item
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 右侧面板 */}
+        <div className="right-panel">
+          {/* 工具栏 */}
+          <div className="sandbox-panel">
+            <div className="panel-content">
+              <h2 className="panel-title">Tools</h2>
+              
+              {/* 分类标签 */}
+              <div className="category-tabs">
+                {Object.keys(itemCategories).map(category => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`category-tab ${selectedCategory === category ? 'active' : 'inactive'}`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+
+              {/* 物品列表 */}
+              <div className="items-grid">
+                {itemCategories[selectedCategory].map(item => (
+                  <div
+                    key={item.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, item)}
+                    onDragEnd={handleDragEnd}
+                    className="item-card"
+                  >
+                    <img 
+                      src={item.image} 
+                      alt={item.name}
+                      className="item-image"
+                      draggable={false}
+                    />
                   </div>
                 ))}
-
-                {placed.length === 0 && !dragGhost && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <p className="text-amber-600 opacity-60 text-lg">拖拽物品到此处开始创作</p>
-                  </div>
-                )}
               </div>
+
+              {/* 操作按钮 */}
+              <div className="action-buttons">
+                <button
+                  onClick={clearSandbox}
+                  className="action-button clear-button"
+                >
+                  Clear
+                </button>
+                <button
+                  onClick={saveScene}
+                  className="action-button save-button"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={analyzeSandbox}
+                  disabled={isAnalyzing || placedItems.length === 0}
+                  className="action-button analyze-button"
+                  style={{
+                    background: 'linear-gradient(135deg, #17a2b8, #138496)',
+                    color: 'white',
+                    opacity: (isAnalyzing || placedItems.length === 0) ? 0.6 : 1
+                  }}
+                >
+                  {isAnalyzing ? 'Analyzing...' : 'Analyze'}
+                </button>
+              </div>
+
+              {/* 错误提示 */}
+              {analysisError && (
+                <div style={{
+                  marginTop: '0.5rem',
+                  padding: '0.5rem',
+                  backgroundColor: '#f8d7da',
+                  color: '#721c24',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.8rem',
+                  textAlign: 'center'
+                }}>
+                  {analysisError}
+                </div>
+              )}
             </div>
-          </section>
+          </div>
+
+          {/* 心理医生区域 */}
+          <div className="psychologist-section">
+            <PsychologistAgent 
+              placedItems={placedItems}
+              onAnalysisUpdate={handleAnalysisUpdate}
+              analysisData={analysisData}
+            />
+          </div>
         </div>
       </div>
     </div>

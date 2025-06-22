@@ -1,219 +1,407 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import {
-  BarChart2, Circle, CheckCircle, XCircle, AlertTriangle, Loader, Award, Target
+import React, { useState, useEffect } from 'react';
+import { 
+  Play, 
+  Pause, 
+  RotateCcw, 
+  Award, 
+  Target, 
+  TrendingUp, 
+  Heart,
+  Brain,
+  Smile,
+  Frown,
+  Meh,
+  Zap
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-
-const emotions = ['happy', 'sad', 'angry', 'neutral', 'fear', 'disgust'];
+import './EmotionGame.css';
 
 const EmotionGame = () => {
-  const [gameState, setGameState] = useState('start'); // 'start', 'playing', 'round_end'
-  const [error, setError] = useState(null);
-  const [score, setScore] = useState(0);
-  const [questionCount, setQuestionCount] = useState(0);
-  const [currentQuestion, setCurrentQuestion] = useState(null);
-  const [feedback, setFeedback] = useState(''); // 'correct', 'incorrect', ''
-  const [roundResults, setRoundResults] = useState([]);
   const [currentRound, setCurrentRound] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [totalRounds] = useState(10);
+  const [score, setScore] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentEmotion, setCurrentEmotion] = useState(null);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [showResult, setShowResult] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
+  const [gameHistory, setGameHistory] = useState([]);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [streak, setStreak] = useState(0);
 
-  const generateQuestion = useCallback(() => {
-    setIsLoading(true);
-    setError(null);
-    setFeedback('');
-    setSelectedAnswer(null);
+  const emotions = [
+    { name: 'happy', emoji: '😊', color: '#10B981', description: 'Happy' },
+    { name: 'sad', emoji: '😢', color: '#3B82F6', description: 'Sad' },
+    { name: 'angry', emoji: '😠', color: '#EF4444', description: 'Angry' },
+    { name: 'surprised', emoji: '😲', color: '#F59E0B', description: 'Surprised' },
+    { name: 'fearful', emoji: '😨', color: '#8B5CF6', description: 'Fearful' },
+    { name: 'disgusted', emoji: '🤢', color: '#84CC16', description: 'Disgusted' },
+    { name: 'neutral', emoji: '😐', color: '#6B7280', description: 'Neutral' }
+  ];
 
-    // Simulate API call with a delay
-    setTimeout(() => {
-      // Simulate a random failure
-      if (Math.random() < 0.15) { // 15% chance to fail
-        setError("Failed to load image. Please try again.");
-        setIsLoading(false);
-        return;
-      }
-
-      const correctEmotion = emotions[Math.floor(Math.random() * emotions.length)];
-      const options = [...emotions].sort(() => 0.5 - Math.random());
-      const incorrectOptions = options.filter(e => e !== correctEmotion).slice(0, 3);
-      const finalOptions = [...incorrectOptions, correctEmotion].sort(() => 0.5 - Math.random());
-      
-      setCurrentQuestion({
-        imageUrl: null, // Placeholder for your dataset image
-        options: finalOptions,
-        correctAnswer: correctEmotion,
-      });
-      setIsLoading(false);
-    }, 800);
-  }, []);
-
-  const handleStartRound = () => {
-    setGameState('playing');
-    setScore(0);
-    setQuestionCount(0);
-    setRoundResults([]);
-    generateQuestion();
+  const emotionImages = {
+    happy: [
+      '/assets/emotions/happy1.jpg',
+      '/assets/emotions/happy2.jpg',
+      '/assets/emotions/happy3.jpg'
+    ],
+    sad: [
+      '/assets/emotions/sad1.jpg',
+      '/assets/emotions/sad2.jpg',
+      '/assets/emotions/sad3.jpg'
+    ],
+    angry: [
+      '/assets/emotions/angry1.jpg',
+      '/assets/emotions/angry2.jpg',
+      '/assets/emotions/angry3.jpg'
+    ],
+    surprised: [
+      '/assets/emotions/surprised1.jpg',
+      '/assets/emotions/surprised2.jpg',
+      '/assets/emotions/surprised3.jpg'
+    ],
+    fearful: [
+      '/assets/emotions/fearful1.jpg',
+      '/assets/emotions/fearful2.jpg',
+      '/assets/emotions/fearful3.jpg'
+    ],
+    disgusted: [
+      '/assets/emotions/disgusted1.jpg',
+      '/assets/emotions/disgusted2.jpg',
+      '/assets/emotions/disgusted3.jpg'
+    ],
+    neutral: [
+      '/assets/emotions/neutral1.jpg',
+      '/assets/emotions/neutral2.jpg',
+      '/assets/emotions/neutral3.jpg'
+    ]
   };
 
-  const handleAnswer = (selected) => {
-    if (feedback) return;
-
-    setSelectedAnswer(selected);
-    const isCorrect = selected === currentQuestion.correctAnswer;
-    const currentResult = [currentQuestion.correctAnswer, selected];
-
-    if (isCorrect) {
-      setScore(prev => prev + 1);
-      setFeedback('correct');
-    } else {
-      setFeedback('incorrect');
+  useEffect(() => {
+    let timer;
+    if (isPlaying && timeLeft > 0) {
+      timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+    } else if (timeLeft === 0 && isPlaying) {
+      handleTimeUp();
     }
+    return () => clearTimeout(timer);
+  }, [timeLeft, isPlaying]);
+
+  const startGame = () => {
+    setIsPlaying(true);
+    setTimeLeft(30);
+    setScore(0);
+    setCurrentRound(1);
+    setStreak(0);
+    setGameHistory([]);
+    generateNewQuestion();
+  };
+
+  const pauseGame = () => {
+    setIsPlaying(false);
+  };
+
+  const resumeGame = () => {
+    setIsPlaying(true);
+  };
+
+  const resetGame = () => {
+    setIsPlaying(false);
+    setTimeLeft(30);
+    setScore(0);
+    setCurrentRound(1);
+    setStreak(0);
+    setGameHistory([]);
+    setCurrentEmotion(null);
+    setSelectedAnswer(null);
+    setShowResult(false);
+  };
+
+  const generateNewQuestion = () => {
+    const randomEmotion = emotions[Math.floor(Math.random() * emotions.length)];
+    setCurrentEmotion(randomEmotion);
+    setSelectedAnswer(null);
+    setShowResult(false);
+  };
+
+  const handleAnswerSelect = (emotion) => {
+    if (showResult) return;
     
+    setSelectedAnswer(emotion);
+    const correct = emotion.name === currentEmotion.name;
+    setIsCorrect(correct);
+    setShowResult(true);
+
+    if (correct) {
+      setScore(score + 10 + Math.floor(timeLeft / 3));
+      setStreak(streak + 1);
+    } else {
+      setStreak(0);
+    }
+
+    const roundResult = {
+      round: currentRound,
+      correctEmotion: currentEmotion.name,
+      selectedEmotion: emotion.name,
+      correct: correct,
+      timeLeft: timeLeft,
+      score: correct ? 10 + Math.floor(timeLeft / 3) : 0
+    };
+
+    setGameHistory([...gameHistory, roundResult]);
+
     setTimeout(() => {
-      const nextQuestionCount = questionCount + 1;
-      if (nextQuestionCount < 5) {
-        setQuestionCount(nextQuestionCount);
-        setRoundResults(prev => [...prev, currentResult]);
-        generateQuestion();
+      if (currentRound < totalRounds) {
+        setCurrentRound(currentRound + 1);
+        generateNewQuestion();
+        setShowResult(false);
       } else {
-        const finalResults = [...roundResults, currentResult];
-        saveRoundResults(finalResults);
-        setRoundResults(finalResults);
-        setGameState('round_end');
+        endGame();
       }
     }, 2000);
   };
-  
-  const saveRoundResults = async (results) => {
-    setIsSubmitting(true);
-    try {
-      const response = await fetch('/save_score_table', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ round: currentRound, results: results }),
-      });
-      if (!response.ok) throw new Error('Backend save failed.');
-    } catch (err) {
-      console.error('Error saving round results:', err);
-    } finally {
-      setIsSubmitting(false);
-    }
+
+  const handleTimeUp = () => {
+    setShowResult(true);
+    setIsCorrect(false);
+    setStreak(0);
+    
+    const roundResult = {
+      round: currentRound,
+      correctEmotion: currentEmotion.name,
+      selectedEmotion: null,
+      correct: false,
+      timeLeft: 0,
+      score: 0
+    };
+
+    setGameHistory([...gameHistory, roundResult]);
+
+    setTimeout(() => {
+      if (currentRound < totalRounds) {
+        setCurrentRound(currentRound + 1);
+        generateNewQuestion();
+        setShowResult(false);
+        setTimeLeft(30);
+      } else {
+        endGame();
+      }
+    }, 2000);
   };
 
-  const handleNextRound = () => {
-    setCurrentRound(prev => prev + 1);
-    setGameState('start');
+  const endGame = () => {
+    setIsPlaying(false);
+    // Here you could send results to backend
+    console.log('Game ended with score:', score);
+  };
+
+  const getProgressPercentage = () => {
+    return (currentRound / totalRounds) * 100;
+  };
+
+  const getAccuracy = () => {
+    if (gameHistory.length === 0) return 0;
+    const correct = gameHistory.filter(result => result.correct).length;
+    return Math.round((correct / gameHistory.length) * 100);
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-50 via-white to-pink-50 font-sans p-4 sm:p-6 lg:p-8 flex flex-col items-center">
-      <header className="text-center mb-8">
-          <div className="flex justify-center items-center gap-4">
-              <div className="w-12 h-12 bg-indigo-500 rounded-full"></div>
-              <h1 className="text-5xl font-bold text-gray-800">Emotion Recognition Game</h1>
-          </div>
-          <p className="text-lg text-gray-500 mt-2">Practice identifying emotions with AI-generated images!</p>
-          <Link to="/analysis" className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-white text-indigo-600 font-semibold rounded-full shadow-md hover:bg-indigo-50 transition-all">
-              <BarChart2 size={20} />
-              View Progress Summary
-          </Link>
-      </header>
-      
-      <main className="w-full max-w-4xl bg-white/70 backdrop-blur-xl rounded-2xl shadow-xl p-6 sm:p-8">
+    <div className="emotion-game-container">
+      {/* Header */}
+      <div className="game-header">
+        <div className="header-content">
+          <h1 className="game-title">
+            <Brain className="title-icon" />
+            Emotion Recognition Game
+          </h1>
+          <p className="game-subtitle">
+            Identify emotions in facial expressions to improve your recognition skills
+          </p>
+        </div>
+      </div>
+
+      {/* Game Controls */}
+      <div className="game-controls">
+        {!isPlaying && currentRound === 1 && (
+          <button className="start-btn" onClick={startGame}>
+            <Play className="btn-icon" />
+            Start Game
+          </button>
+        )}
         
-        {/* Game State: Start */}
-        {gameState === 'start' && (
-          <div className="text-center py-16">
-            <Target size={64} className="mx-auto text-indigo-500" />
-            <h2 className="text-3xl font-bold text-gray-800 mt-4">Ready for Round {currentRound}?</h2>
-            <p className="text-gray-600 my-4">You'll be shown 5 images. Identify the correct emotion for each.</p>
-            <button onClick={handleStartRound} className="w-1/2 py-4 bg-indigo-600 text-white font-bold text-xl rounded-xl shadow-lg hover:bg-indigo-700 transition-all duration-200 transform hover:scale-105">
-              Start
+        {isPlaying && (
+          <div className="control-buttons">
+            <button className="pause-btn" onClick={pauseGame}>
+              <Pause className="btn-icon" />
+              Pause
             </button>
           </div>
         )}
+        
+        {!isPlaying && currentRound > 1 && (
+          <div className="control-buttons">
+            <button className="resume-btn" onClick={resumeGame}>
+              <Play className="btn-icon" />
+              Resume
+            </button>
+            <button className="reset-btn" onClick={resetGame}>
+              <RotateCcw className="btn-icon" />
+              Reset
+            </button>
+          </div>
+        )}
+      </div>
 
-        {/* Game State: Playing or Loading */}
-        {gameState === 'playing' && (
+      {/* Game Stats */}
+      <div className="game-stats">
+        <div className="stat-card">
+          <Target className="stat-icon" />
+          <div className="stat-content">
+            <span className="stat-label">Round</span>
+            <span className="stat-value">{currentRound}/{totalRounds}</span>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <Award className="stat-icon" />
+          <div className="stat-content">
+            <span className="stat-label">Score</span>
+            <span className="stat-value">{score}</span>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <TrendingUp className="stat-icon" />
+          <div className="stat-content">
+            <span className="stat-label">Accuracy</span>
+            <span className="stat-value">{getAccuracy()}%</span>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <Zap className="stat-icon" />
+          <div className="stat-content">
+            <span className="stat-label">Streak</span>
+            <span className="stat-value">{streak}</span>
+          </div>
+        </div>
+        
+        {isPlaying && (
+          <div className="stat-card timer-card">
+            <Heart className="stat-icon" />
+            <div className="stat-content">
+              <span className="stat-label">Time</span>
+              <span className={`stat-value ${timeLeft <= 10 ? 'time-warning' : ''}`}>
+                {timeLeft}s
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Progress Bar */}
+      <div className="progress-container">
+        <div className="progress-bar">
+          <div 
+            className="progress-fill"
+            style={{ width: `${getProgressPercentage()}%` }}
+          ></div>
+        </div>
+        <span className="progress-text">{Math.round(getProgressPercentage())}% Complete</span>
+      </div>
+
+      {/* Game Area */}
+      <div className="game-area">
+        {currentEmotion && (
           <>
-            {/* Status Bar */}
-            <div className="mb-6">
-              <div className="flex justify-between items-center text-gray-700 font-semibold">
-                <span>Round: <span className="font-bold text-indigo-600 text-lg">{currentRound}</span></span>
-                <span>Question: <span className="font-bold text-indigo-600 text-lg">{questionCount + 1}/5</span></span>
-                <span>Score: <span className="font-bold text-green-500 text-lg">{score}</span></span>
+            {/* Emotion Display */}
+            <div className="emotion-display">
+              <div className="emotion-image-container">
+                <div className="emotion-placeholder">
+                  <Smile className="placeholder-icon" />
+                  <p>Emotion Image</p>
+                </div>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                <div className="bg-indigo-500 h-2.5 rounded-full transition-all duration-500" style={{ width: `${(questionCount / 5) * 100}%` }}></div>
-              </div>
-            </div>
-
-            {error && (
-              <div className="flex items-center gap-3 bg-red-100 text-red-700 p-4 rounded-lg mb-4">
-                <AlertTriangle />
-                <span className="font-semibold">{error}</span>
-              </div>
-            )}
-
-            {/* Main Content */}
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">What emotion is this person showing? 🤔</h2>
-            </div>
-            
-            <div className="relative aspect-[4/3] w-full bg-gray-100 rounded-xl shadow-inner flex items-center justify-center border-2 border-dashed border-gray-300">
-              {isLoading ? (
-                <Loader className="animate-spin text-gray-400" size={48} />
-              ) : (
-                <span className="text-gray-400 font-semibold">Emotion to identify</span>
+              
+              {showResult && (
+                <div className={`result-overlay ${isCorrect ? 'correct' : 'incorrect'}`}>
+                  <div className="result-content">
+                    <span className="result-emoji">
+                      {isCorrect ? '🎉' : '😔'}
+                    </span>
+                    <span className="result-text">
+                      {isCorrect ? 'Correct!' : 'Incorrect!'}
+                    </span>
+                    <span className="correct-answer">
+                      The emotion was: {currentEmotion.description}
+                    </span>
+                  </div>
+                </div>
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mt-6">
-              {currentQuestion?.options.map((emotion) => {
-                const isSelected = selectedAnswer === emotion;
-                const isCorrect = feedback === 'correct' && isSelected;
-                const isWrong = feedback === 'incorrect' && isSelected;
-                const isActualAnswer = feedback && emotion === currentQuestion.correctAnswer;
-                
-                let buttonClass = 'bg-white hover:bg-gray-100';
-                if (feedback) {
-                  if (isCorrect || isActualAnswer) buttonClass = 'bg-green-100 text-green-800 ring-2 ring-green-500';
-                  else if (isWrong) buttonClass = 'bg-red-100 text-red-800 ring-2 ring-red-500';
-                  else buttonClass = 'bg-gray-100 text-gray-400 cursor-not-allowed';
-                }
-
-                return (
+            {/* Answer Options */}
+            <div className="answer-options">
+              <h3 className="options-title">What emotion is this?</h3>
+              <div className="options-grid">
+                {emotions.map((emotion) => (
                   <button
-                    key={emotion}
-                    onClick={() => handleAnswer(emotion)}
-                    disabled={!!feedback || isLoading}
-                    className={`flex items-center justify-center gap-3 p-4 rounded-xl text-lg font-semibold transition-all duration-200 disabled:cursor-not-allowed ${buttonClass}`}
+                    key={emotion.name}
+                    className={`option-btn ${
+                      selectedAnswer?.name === emotion.name ? 'selected' : ''
+                    } ${
+                      showResult && emotion.name === currentEmotion.name ? 'correct-answer' : ''
+                    } ${
+                      showResult && selectedAnswer?.name === emotion.name && emotion.name !== currentEmotion.name ? 'incorrect-answer' : ''
+                    }`}
+                    onClick={() => handleAnswerSelect(emotion)}
+                    disabled={showResult}
+                    style={{
+                      '--emotion-color': emotion.color
+                    }}
                   >
-                    {isCorrect && <CheckCircle size={24} />}
-                    {isWrong && <XCircle size={24} />}
-                    <span className="capitalize">{emotion}</span>
+                    <span className="option-emoji">{emotion.emoji}</span>
+                    <span className="option-text">{emotion.description}</span>
                   </button>
-                );
-              })}
+                ))}
+              </div>
             </div>
           </>
         )}
-        
-        {/* Game State: Round End */}
-        {gameState === 'round_end' && (
-          <div className="text-center py-16">
-            <Award size={64} className="mx-auto text-yellow-500" />
-            <h2 className="text-3xl font-bold text-gray-800 mt-4">Round Complete!</h2>
-            <p className="text-xl text-gray-600 mt-2">Your score: <span className="font-bold text-green-500">{score} / 5</span></p>
-            <p className="text-6xl font-bold text-indigo-600 my-4">{Math.round((score / 5) * 100)}%</p>
-            <button onClick={handleNextRound} disabled={isSubmitting} className="w-1/2 py-4 bg-indigo-600 text-white font-bold text-xl rounded-xl shadow-lg hover:bg-indigo-700 transition-all duration-200 transform hover:scale-105 disabled:bg-gray-400">
-              {isSubmitting ? 'Saving...' : `Continue to Round ${currentRound + 1}`}
-            </button>
+
+        {/* Game Complete */}
+        {currentRound > totalRounds && (
+          <div className="game-complete">
+            <div className="complete-content">
+              <Award className="complete-icon" />
+              <h2 className="complete-title">Game Complete!</h2>
+              <p className="complete-score">Final Score: {score}</p>
+              <p className="complete-accuracy">Accuracy: {getAccuracy()}%</p>
+              <button className="play-again-btn" onClick={resetGame}>
+                <RotateCcw className="btn-icon" />
+                Play Again
+              </button>
+            </div>
           </div>
         )}
+      </div>
 
-      </main>
+      {/* Game History */}
+      {gameHistory.length > 0 && (
+        <div className="game-history">
+          <h3 className="history-title">Recent Rounds</h3>
+          <div className="history-list">
+            {gameHistory.slice(-5).map((result, index) => (
+              <div key={index} className={`history-item ${result.correct ? 'correct' : 'incorrect'}`}>
+                <span className="history-round">Round {result.round}</span>
+                <span className="history-result">
+                  {result.correct ? '✓' : '✗'} {result.correctEmotion}
+                </span>
+                <span className="history-score">+{result.score}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
