@@ -1,6 +1,6 @@
 .emotion-game-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #fff7ed 0%, #ffe7ba 100%);
   padding: 2rem;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
@@ -9,7 +9,7 @@
 .game-header {
   text-align: center;
   margin-bottom: 3rem;
-  color: white;
+  color: #b45309;
 }
 
 .header-content h1 {
@@ -32,6 +32,7 @@
   font-size: 1.25rem;
   opacity: 0.9;
   font-weight: 400;
+  color: #b45309;
 }
 
 /* Game Controls */
@@ -52,48 +53,48 @@
   font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
 }
 
 .start-btn {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
+  background: linear-gradient(135deg, #fbbf24, #f59e42);
+  color: #fff7ed;
 }
 
 .start-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 15px 30px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 15px 30px rgba(251, 191, 36, 0.18);
 }
 
 .pause-btn {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
+  background: linear-gradient(135deg, #fdba74, #f59e42);
+  color: #fff7ed;
 }
 
 .pause-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 15px 30px rgba(245, 158, 11, 0.4);
+  box-shadow: 0 15px 30px rgba(253, 186, 116, 0.18);
 }
 
 .resume-btn {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: white;
+  background: linear-gradient(135deg, #fbbf24, #f59e42);
+  color: #fff7ed;
   margin-right: 1rem;
 }
 
 .resume-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 15px 30px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 15px 30px rgba(251, 191, 36, 0.18);
 }
 
 .reset-btn {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
+  background: linear-gradient(135deg, #f87171, #fbbf24);
+  color: #fff7ed;
 }
 
 .reset-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 15px 30px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 15px 30px rgba(248, 113, 113, 0.18);
 }
 
 .btn-icon {
@@ -110,15 +111,15 @@
 }
 
 .stat-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 247, 237, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 1rem;
   padding: 1.5rem;
   display: flex;
   align-items: center;
   gap: 1rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(251, 191, 36, 0.08);
+  border: 1px solid #ffe7ba;
   transition: transform 0.3s ease;
 }
 
@@ -129,7 +130,7 @@
 .stat-icon {
   width: 2rem;
   height: 2rem;
-  color: #667eea;
+  color: #f59e42;
   flex-shrink: 0;
 }
 
@@ -140,7 +141,7 @@
 
 .stat-label {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #b45309;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -149,11 +150,11 @@
 .stat-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #b45309;
 }
 
 .timer-card .stat-value.time-warning {
-  color: #ef4444;
+  color: #f87171;
   animation: pulse 1s infinite;
 }
 
@@ -171,7 +172,7 @@
 .progress-bar {
   width: 100%;
   height: 0.75rem;
-  background: rgba(255, 255, 255, 0.2);
+  background: #ffe7ba;
   border-radius: 0.5rem;
   overflow: hidden;
   margin-bottom: 0.5rem;
@@ -179,25 +180,25 @@
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #10b981, #059669);
+  background: linear-gradient(90deg, #fbbf24, #fdba74);
   border-radius: 0.5rem;
   transition: width 0.5s ease;
 }
 
 .progress-text {
-  color: white;
+  color: #b45309;
   font-weight: 600;
   font-size: 1rem;
 }
 
 /* Game Area */
 .game-area {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 247, 237, 0.98);
   backdrop-filter: blur(10px);
   border-radius: 1.5rem;
   padding: 2rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 40px rgba(251, 191, 36, 0.08);
+  border: 1px solid #ffe7ba;
   margin-bottom: 2rem;
 }
 
@@ -210,18 +211,18 @@
 .emotion-image-container {
   width: 100%;
   height: 300px;
-  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  background: linear-gradient(135deg, #fff7ed, #ffe7ba);
   border-radius: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px dashed #d1d5db;
+  border: 2px dashed #fdba74;
   overflow: hidden;
 }
 
 .emotion-placeholder {
   text-align: center;
-  color: #6b7280;
+  color: #b45309;
 }
 
 .placeholder-icon {
@@ -251,16 +252,16 @@
 }
 
 .result-overlay.correct {
-  background: rgba(16, 185, 129, 0.9);
+  background: rgba(251, 191, 36, 0.92);
 }
 
 .result-overlay.incorrect {
-  background: rgba(239, 68, 68, 0.9);
+  background: rgba(248, 113, 113, 0.92);
 }
 
 .result-content {
   text-align: center;
-  color: white;
+  color: #fff7ed;
 }
 
 .result-emoji {
@@ -294,7 +295,7 @@
 .options-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #b45309;
   margin-bottom: 1.5rem;
 }
 
@@ -310,40 +311,41 @@
   align-items: center;
   gap: 0.5rem;
   padding: 1.5rem;
-  border: 2px solid #e5e7eb;
+  border: 2px solid #ffe7ba;
   border-radius: 1rem;
-  background: white;
+  background: #fff7ed;
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 600;
   font-size: 1.1rem;
+  color: #b45309;
 }
 
 .option-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  border-color: var(--emotion-color);
+  box-shadow: 0 10px 25px rgba(251, 191, 36, 0.12);
+  border-color: var(--emotion-color, #fbbf24);
 }
 
 .option-btn.selected {
-  border-color: var(--emotion-color);
-  background: var(--emotion-color);
-  color: white;
+  border-color: var(--emotion-color, #fbbf24);
+  background: var(--emotion-color, #fbbf24);
+  color: #fff7ed;
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 25px rgba(251, 191, 36, 0.18);
 }
 
 .option-btn.correct-answer {
-  border-color: #10b981;
-  background: #10b981;
-  color: white;
+  border-color: #fbbf24;
+  background: #fbbf24;
+  color: #fff7ed;
   animation: correctPulse 0.5s ease;
 }
 
 .option-btn.incorrect-answer {
-  border-color: #ef4444;
-  background: #ef4444;
-  color: white;
+  border-color: #f87171;
+  background: #f87171;
+  color: #fff7ed;
   animation: incorrectShake 0.5s ease;
 }
 
@@ -393,13 +395,13 @@
 .complete-title {
   font-size: 2rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #b45309;
   margin-bottom: 1rem;
 }
 
 .complete-score, .complete-accuracy {
   font-size: 1.25rem;
-  color: #6b7280;
+  color: #b45309;
   margin-bottom: 0.5rem;
 }
 
@@ -409,36 +411,36 @@
   gap: 0.5rem;
   margin: 2rem auto 0;
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
+  background: linear-gradient(135deg, #fbbf24, #fdba74);
+  color: #fff7ed;
   border: none;
   border-radius: 1rem;
   font-weight: 600;
   font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 25px rgba(251, 191, 36, 0.18);
 }
 
 .play-again-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 15px 30px rgba(251, 191, 36, 0.18);
 }
 
 /* Game History */
 .game-history {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 247, 237, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 1rem;
   padding: 1.5rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(251, 191, 36, 0.08);
+  border: 1px solid #ffe7ba;
 }
 
 .history-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #b45309;
   margin-bottom: 1rem;
 }
 
@@ -459,15 +461,15 @@
 }
 
 .history-item.correct {
-  background: rgba(16, 185, 129, 0.1);
-  color: #065f46;
-  border-left: 4px solid #10b981;
+  background: rgba(251, 191, 36, 0.12);
+  color: #b45309;
+  border-left: 4px solid #fbbf24;
 }
 
 .history-item.incorrect {
-  background: rgba(239, 68, 68, 0.1);
-  color: #991b1b;
-  border-left: 4px solid #ef4444;
+  background: rgba(248, 113, 113, 0.12);
+  color: #b45309;
+  border-left: 4px solid #f87171;
 }
 
 .history-round {

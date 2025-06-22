@@ -20,6 +20,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import './AnalysisDashboard.css';
 
 ChartJS.register(
   RadialLinearScale,
@@ -37,18 +38,18 @@ const EmotionRadarChart = ({ accuracies, emotions }) => {
       {
         label: 'Healthy-Normal Response',
         data: emotions.map(() => 100),
-        backgroundColor: 'rgba(54, 162, 235, 0.2)',
-        borderColor: 'rgba(54, 162, 235, 1)',
+        backgroundColor: 'rgba(251, 191, 36, 0.2)',
+        borderColor: 'rgba(251, 191, 36, 1)',
         borderWidth: 2,
-        pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+        pointBackgroundColor: 'rgba(251, 191, 36, 1)',
       },
       {
         label: 'User Response (Autistic)',
         data: emotions.map(emotion => accuracies[emotion] || 0),
-        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-        borderColor: 'rgba(255, 99, 132, 1)',
+        backgroundColor: 'rgba(248, 113, 113, 0.2)',
+        borderColor: 'rgba(248, 113, 113, 1)',
         borderWidth: 2,
-        pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+        pointBackgroundColor: 'rgba(248, 113, 113, 1)',
       },
     ],
   };
@@ -59,10 +60,10 @@ const EmotionRadarChart = ({ accuracies, emotions }) => {
       r: {
         angleLines: {
           display: true,
-          color: 'rgba(0, 0, 0, 0.1)',
+          color: 'rgba(180, 83, 9, 0.1)',
         },
         grid: {
-          color: 'rgba(0, 0, 0, 0.1)',
+          color: 'rgba(180, 83, 9, 0.1)',
         },
         suggestedMin: 0,
         suggestedMax: 100,
@@ -71,11 +72,11 @@ const EmotionRadarChart = ({ accuracies, emotions }) => {
             size: 24,
             weight: 'bold',
           },
-          color: '#1e293b',
+          color: '#b45309',
         },
         ticks: {
           backdropColor: 'transparent',
-          color: '#1e293b',
+          color: '#b45309',
           font: {
             size: 16,
             weight: 'bold',
@@ -87,7 +88,7 @@ const EmotionRadarChart = ({ accuracies, emotions }) => {
       legend: {
         position: 'top',
         labels: {
-          color: '#1e293b',
+          color: '#b45309',
           font: {
             size: 20,
             weight: 'bold',
@@ -138,25 +139,11 @@ const AnalysisDashboard = () => {
     fetchData();
   }, []);
 
-  const getAccuracyColor = (accuracy) => {
-    if (accuracy >= 80) return 'text-green-600';
-    if (accuracy >= 60) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getAccuracyBgColor = (accuracy) => {
-    if (accuracy >= 80) return 'bg-green-100';
-    if (accuracy >= 60) return 'bg-yellow-100';
-    return 'bg-red-100';
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-center h-64">
-            <Loader className="animate-spin text-blue-600" size={48} />
-          </div>
+      <div className="analysis-dashboard-container">
+        <div className="loading-container">
+          <Loader className="loading-spinner" />
         </div>
       </div>
     );
@@ -164,20 +151,17 @@ const AnalysisDashboard = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={20} />
-              <span>Error: {error}</span>
-            </div>
-            <button 
-              onClick={fetchData}
-              className="mt-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-            >
-              Retry
-            </button>
-          </div>
+      <div className="analysis-dashboard-container">
+        <div className="error-container">
+          <AlertTriangle className="error-icon" />
+          <div className="error-message">Error: {error}</div>
+          <button 
+            onClick={fetchData}
+            className="retry-btn"
+          >
+            <RefreshCw size={16} />
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -185,173 +169,154 @@ const AnalysisDashboard = () => {
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center py-16">
-            <Brain size={64} className="mx-auto text-gray-400 mb-4" />
-            <h2 className="text-2xl font-bold text-gray-600">No Data Available</h2>
-            <p className="text-gray-500 mt-2">Play some emotion recognition games to see your analysis here.</p>
-          </div>
+      <div className="analysis-dashboard-container">
+        <div className="no-data-container">
+          <Brain className="no-data-icon" />
+          <h2 className="no-data-title">No Data Available</h2>
+          <p className="no-data-message">Play some emotion recognition games to see your analysis here.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+    <div className="analysis-dashboard-container">
+      {/* Header */}
+      <div className="dashboard-header">
+        <div className="header-content">
+          <div className="header-title">
+            <Activity className="title-icon" />
             <div>
-              <h1 className="text-4xl font-bold text-gray-800 flex items-center gap-3">
-                <Activity className="text-blue-600" />
-                Emotion Vector Analysis Summary
-              </h1>
-              <p className="text-gray-600 mt-2">
+              <h1>Emotion Vector Analysis Summary</h1>
+              <p className="header-subtitle">
                 Comprehensive analysis of your emotion recognition performance
               </p>
             </div>
-            <button 
-              onClick={fetchData}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <RefreshCw size={16} />
-              Refresh
-            </button>
+          </div>
+          <button 
+            onClick={fetchData}
+            className="refresh-btn"
+          >
+            <RefreshCw className="btn-icon" />
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <Target className="stat-icon" />
+          <div className="stat-content">
+            <span className="stat-label">Total Questions</span>
+            <span className="stat-value">{data.overall_stats.total_questions}</span>
           </div>
         </div>
+        <div className="stat-card">
+          <Award className="stat-icon" />
+          <div className="stat-content">
+            <span className="stat-label">Correct Answers</span>
+            <span className="stat-value">{data.overall_stats.total_correct}</span>
+          </div>
+        </div>
+        <div className="stat-card">
+          <TrendingUp className="stat-icon" />
+          <div className="stat-content">
+            <span className="stat-label">Overall Accuracy</span>
+            <span className="stat-value">{data.overall_stats.overall_accuracy.toFixed(1)}%</span>
+          </div>
+        </div>
+        <div className="stat-card">
+          <BarChart3 className="stat-icon" />
+          <div className="stat-content">
+            <span className="stat-label">Data Points</span>
+            <span className="stat-value">{data.data_points}</span>
+          </div>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          {/* Left Column (3/5 width) */}
-          <div className="lg:col-span-3 space-y-8">
-            {/* Overall Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-xl p-6 shadow-lg">
-                <div className="flex items-center gap-3">
-                  <Target className="text-blue-600" size={24} />
-                  <div>
-                    <p className="text-gray-500 text-sm">Total Questions</p>
-                    <p className="text-2xl font-bold text-gray-800">{data.overall_stats.total_questions}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl p-6 shadow-lg">
-                <div className="flex items-center gap-3">
-                  <Award className="text-green-600" size={24} />
-                  <div>
-                    <p className="text-gray-500 text-sm">Correct Answers</p>
-                    <p className="text-2xl font-bold text-gray-800">{data.overall_stats.total_correct}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl p-6 shadow-lg">
-                <div className="flex items-center gap-3">
-                  <TrendingUp className="text-purple-600" size={24} />
-                  <div>
-                    <p className="text-gray-500 text-sm">Overall Accuracy</p>
-                    <p className="text-2xl font-bold text-gray-800">{data.overall_stats.overall_accuracy.toFixed(1)}%</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl p-6 shadow-lg">
-                <div className="flex items-center gap-3">
-                  <BarChart3 className="text-orange-600" size={24} />
-                  <div>
-                    <p className="text-gray-500 text-sm">Data Points</p>
-                    <p className="text-2xl font-bold text-gray-800">{data.data_points}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Emotion Matrix Heatmap */}
-            <div className="bg-white rounded-xl p-6 shadow-lg">
-              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <Brain className="text-blue-600" size={20} />
-                Emotion Recognition Matrix
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr>
-                      <th className="p-2 text-left">Correct →</th>
-                      {data.emotions.map(emotion => (
-                        <th key={emotion} className="p-2 text-center text-xs">
-                          {emotion}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.matrix.map((row, i) => (
-                      <tr key={i}>
-                        <td className="p-2 font-medium text-xs">{data.emotions[i]}</td>
-                        {row.map((cell, j) => (
-                          <td 
-                            key={j} 
-                            className={`p-2 text-center text-xs ${
-                              i === j ? 'bg-green-100 font-bold' : 
-                              cell > 0 ? 'bg-yellow-100' : 'bg-gray-50'
-                            }`}
-                          >
-                            {cell}
-                          </td>
-                        ))}
-                      </tr>
+      {/* Main Content Grid */}
+      <div className="main-content-grid">
+        {/* Emotion Matrix */}
+        <div className="emotion-matrix">
+          <div className="matrix-header">
+            <Brain className="header-icon" />
+            <h3>Emotion Recognition Matrix</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="matrix-table">
+              <thead>
+                <tr>
+                  <th>Correct →</th>
+                  {data.emotions.map(emotion => (
+                    <th key={emotion}>{emotion}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {data.matrix.map((row, i) => (
+                  <tr key={i}>
+                    <td className="row-header">{data.emotions[i]}</td>
+                    {row.map((cell, j) => (
+                      <td 
+                        key={j} 
+                        className={
+                          i === j ? 'correct-cell' : 
+                          cell > 0 ? 'confusion-cell' : 'empty-cell'
+                        }
+                      >
+                        {cell}
+                      </td>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Diagonal (green) = correct answers, Other cells = confusion patterns
-              </p>
-            </div>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          
-          {/* Right Column (2/5 width) */}
-          <div className="lg:col-span-3 bg-white rounded-xl p-6 shadow-lg flex flex-col">
-            <h3 className="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">
-              <TrendingUp className="text-purple-600" size={20} />
-              Emotion Response Profile
-            </h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Comparing user's accuracy (red) against a healthy-normal baseline (blue).
-            </p>
-            <div
-              className="relative flex items-center justify-center"
-              style={{ width: '100%', height: '900px', maxWidth: '900px', margin: '0 auto' }}
-            >
-              <EmotionRadarChart accuracies={data.accuracies} emotions={data.emotions} />
-            </div>
+          <p className="matrix-description">
+            Diagonal (yellow) = correct answers, Other cells = confusion patterns
+          </p>
+        </div>
+        
+        {/* Radar Chart */}
+        <div className="radar-chart-container">
+          <div className="radar-header">
+            <TrendingUp className="header-icon" />
+            <h3>Emotion Response Profile</h3>
+          </div>
+          <p className="radar-description">
+            Comparing user's accuracy (red) against a healthy-normal baseline (yellow).
+          </p>
+          <div className="radar-chart-wrapper">
+            <EmotionRadarChart accuracies={data.accuracies} emotions={data.emotions} />
           </div>
         </div>
+      </div>
 
-        {/* Training Recommendations */}
-        <div className="mt-8 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-6 shadow-lg">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <AlertTriangle className="text-orange-600" size={20} />
-            Training Recommendations
-          </h3>
-          <div className="space-y-2">
-            {data.emotions.map(emotion => {
-              const accuracy = data.accuracies[emotion];
-              if (accuracy < 60) {
-                return (
-                  <p key={emotion} className="text-gray-700">
-                    <span className="font-semibold capitalize">{emotion}:</span> 
-                    Your accuracy is {accuracy.toFixed(1)}%. Consider practicing more with {emotion} expressions.
-                  </p>
-                );
-              }
-              return null;
-            })}
-            {data.emotions.every(emotion => data.accuracies[emotion] >= 60) && (
-              <p className="text-green-700 font-medium">
-                Great job! All emotions have accuracy above 60%. Keep practicing to maintain your skills!
-              </p>
-            )}
-          </div>
+      {/* Training Recommendations */}
+      <div className="recommendations-section">
+        <div className="recommendations-header">
+          <AlertTriangle className="header-icon" />
+          <h3>Training Recommendations</h3>
+        </div>
+        <div className="recommendations-list">
+          {data.emotions.map(emotion => {
+            const accuracy = data.accuracies[emotion];
+            if (accuracy < 60) {
+              return (
+                <div key={emotion} className="recommendation-item">
+                  <span className="emotion-name">{emotion}:</span> 
+                  Your accuracy is <span className="accuracy">{accuracy.toFixed(1)}%</span>. Consider practicing more with {emotion} expressions.
+                </div>
+              );
+            }
+            return null;
+          })}
+          {data.emotions.every(emotion => data.accuracies[emotion] >= 60) && (
+            <div className="success-message">
+              Great job! All emotions have accuracy above 60%. Keep practicing to maintain your skills!
+            </div>
+          )}
         </div>
       </div>
     </div>
