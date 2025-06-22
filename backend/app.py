@@ -77,7 +77,7 @@ def load_all_scores(score_dir):
 def compute_emotion_matrix(data):
     """Compute 7x7 confusion matrix from emotion recognition data"""
     # Initialize 7x7 matrix
-    M = np.zeros((7, 7), dtype=int)
+    M = np.zeros((6, 6), dtype=int)
     
     # Map emotions to indices
     emotion_to_idx = {emotion: idx for idx, emotion in enumerate(EMOTIONS)}
@@ -156,7 +156,7 @@ def emotion_summary():
         M = compute_emotion_matrix(data)
         
         # Define base vector (all 1s)
-        V0 = np.ones(7)
+        V0 = np.ones(6)
         
         # Compute direction vector
         V_user = compute_direction_vector(V0, M)
