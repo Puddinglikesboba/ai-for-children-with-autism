@@ -37,8 +37,20 @@ if not os.path.exists('scores'):
 # Emotion categories
 EMOTIONS = ['angry', 'disgust', 'happy', 'sadness', 'neutral', 'fear', 'surprised']
 
+# A mapping to normalize emotion names, treating 'sad' and 'sadness' as the same.
+EMOTION_MAP = {
+    'sad': 'sadness',
+    'sadness': 'sadness',
+    'angry': 'angry',
+    'disgust': 'disgust',
+    'happy': 'happy',
+    'neutral': 'neutral',
+    'fear': 'fear',
+    'surprised': 'surprised'
+}
+
 def load_all_scores(score_dir):
-    """Load all .npy files from scores directory and combine data"""
+    """Load all .npy files from scores directory and combine/normalize data"""
     combined_data = []
     
     if not os.path.exists(score_dir):
@@ -49,9 +61,16 @@ def load_all_scores(score_dir):
             filepath = os.path.join(score_dir, filename)
             try:
                 data = np.load(filepath)
-                combined_data.extend(data.tolist())
+                # Normalize the data to handle inconsistencies like 'sad' vs 'sadness'
+                normalized_data = []
+                for correct, selected in data.tolist():
+                    norm_correct = EMOTION_MAP.get(str(correct).lower())
+                    norm_selected = EMOTION_MAP.get(str(selected).lower())
+                    if norm_correct and norm_selected:
+                        normalized_data.append([norm_correct, norm_selected])
+                combined_data.extend(normalized_data)
             except Exception as e:
-                print(f"Error loading {filename}: {str(e)}")
+                app_log.error(f"Error loading or normalizing {filename}: {str(e)}")
                 continue
     
     return combined_data
@@ -324,3 +343,4 @@ if __name__ == '__main__':
 
 
 
+ 

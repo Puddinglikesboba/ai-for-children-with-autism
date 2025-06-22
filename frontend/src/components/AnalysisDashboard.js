@@ -10,6 +10,94 @@ import {
   Brain,
   Award
 } from 'lucide-react';
+import { Radar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+ChartJS.register(
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend
+);
+
+const EmotionRadarChart = ({ accuracies, emotions }) => {
+  // Per your sketch, we are focusing on 5 core emotions, with Neutral as the center.
+  const chartEmotions = ['angry', 'disgust', 'happy', 'sad', 'fear'];
+  
+  const chartData = {
+    labels: chartEmotions.map(e => e.charAt(0).toUpperCase() + e.slice(1)),
+    datasets: [
+      {
+        label: 'Healthy-Normal Response',
+        data: chartEmotions.map(() => 100), // Perfect score
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 2,
+        pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+      },
+      {
+        label: 'User Response (Autistic)',
+        data: chartEmotions.map(emotion => accuracies[emotion] || 0),
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        borderColor: 'rgba(255, 99, 132, 1)',
+        borderWidth: 2,
+        pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+      },
+    ],
+  };
+
+  const options = {
+    scales: {
+      r: {
+        angleLines: {
+          display: true,
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+        suggestedMin: 0,
+        suggestedMax: 100,
+        pointLabels: {
+          font: {
+            size: 14,
+            weight: 'bold'
+          },
+          color: '#1f2937'
+        },
+        ticks: {
+          backdropColor: 'transparent',
+          color: '#6b7280',
+        }
+      },
+    },
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return `${context.dataset.label}: ${context.raw.toFixed(1)}%`;
+          }
+        }
+      }
+    },
+    maintainAspectRatio: false,
+  };
+
+  return <Radar data={chartData} options={options} />;
+};
 
 const AnalysisDashboard = () => {
   const [data, setData] = useState(null);
@@ -121,156 +209,105 @@ const AnalysisDashboard = () => {
           </div>
         </div>
 
-        {/* Overall Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow-lg">
-            <div className="flex items-center gap-3">
-              <Target className="text-blue-600" size={24} />
-              <div>
-                <p className="text-gray-500 text-sm">Total Questions</p>
-                <p className="text-2xl font-bold text-gray-800">{data.overall_stats.total_questions}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          {/* Left Column (3/5 width) */}
+          <div className="lg:col-span-3 space-y-8">
+            {/* Overall Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="flex items-center gap-3">
+                  <Target className="text-blue-600" size={24} />
+                  <div>
+                    <p className="text-gray-500 text-sm">Total Questions</p>
+                    <p className="text-2xl font-bold text-gray-800">{data.overall_stats.total_questions}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="flex items-center gap-3">
+                  <Award className="text-green-600" size={24} />
+                  <div>
+                    <p className="text-gray-500 text-sm">Correct Answers</p>
+                    <p className="text-2xl font-bold text-gray-800">{data.overall_stats.total_correct}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="flex items-center gap-3">
+                  <TrendingUp className="text-purple-600" size={24} />
+                  <div>
+                    <p className="text-gray-500 text-sm">Overall Accuracy</p>
+                    <p className="text-2xl font-bold text-gray-800">{data.overall_stats.overall_accuracy.toFixed(1)}%</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="flex items-center gap-3">
+                  <BarChart3 className="text-orange-600" size={24} />
+                  <div>
+                    <p className="text-gray-500 text-sm">Data Points</p>
+                    <p className="text-2xl font-bold text-gray-800">{data.data_points}</p>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="bg-white rounded-xl p-6 shadow-lg">
-            <div className="flex items-center gap-3">
-              <Award className="text-green-600" size={24} />
-              <div>
-                <p className="text-gray-500 text-sm">Correct Answers</p>
-                <p className="text-2xl font-bold text-gray-800">{data.overall_stats.total_correct}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-6 shadow-lg">
-            <div className="flex items-center gap-3">
-              <TrendingUp className="text-purple-600" size={24} />
-              <div>
-                <p className="text-gray-500 text-sm">Overall Accuracy</p>
-                <p className="text-2xl font-bold text-gray-800">{data.overall_stats.overall_accuracy.toFixed(1)}%</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-6 shadow-lg">
-            <div className="flex items-center gap-3">
-              <BarChart3 className="text-orange-600" size={24} />
-              <div>
-                <p className="text-gray-500 text-sm">Data Points</p>
-                <p className="text-2xl font-bold text-gray-800">{data.data_points}</p>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Emotion Matrix Heatmap */}
-          <div className="bg-white rounded-xl p-6 shadow-lg">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <Brain className="text-blue-600" size={20} />
-              Emotion Recognition Matrix
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className="p-2 text-left">Correct →</th>
-                    {data.emotions.map(emotion => (
-                      <th key={emotion} className="p-2 text-center text-xs">
-                        {emotion}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.matrix.map((row, i) => (
-                    <tr key={i}>
-                      <td className="p-2 font-medium text-xs">{data.emotions[i]}</td>
-                      {row.map((cell, j) => (
-                        <td 
-                          key={j} 
-                          className={`p-2 text-center text-xs ${
-                            i === j ? 'bg-green-100 font-bold' : 
-                            cell > 0 ? 'bg-yellow-100' : 'bg-gray-50'
-                          }`}
-                        >
-                          {cell}
-                        </td>
+            {/* Emotion Matrix Heatmap */}
+            <div className="bg-white rounded-xl p-6 shadow-lg">
+              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <Brain className="text-blue-600" size={20} />
+                Emotion Recognition Matrix
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr>
+                      <th className="p-2 text-left">Correct →</th>
+                      {data.emotions.map(emotion => (
+                        <th key={emotion} className="p-2 text-center text-xs">
+                          {emotion}
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {data.matrix.map((row, i) => (
+                      <tr key={i}>
+                        <td className="p-2 font-medium text-xs">{data.emotions[i]}</td>
+                        {row.map((cell, j) => (
+                          <td 
+                            key={j} 
+                            className={`p-2 text-center text-xs ${
+                              i === j ? 'bg-green-100 font-bold' : 
+                              cell > 0 ? 'bg-yellow-100' : 'bg-gray-50'
+                            }`}
+                          >
+                            {cell}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Diagonal (green) = correct answers, Other cells = confusion patterns
+              </p>
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Diagonal (green) = correct answers, Other cells = confusion patterns
-            </p>
           </div>
-
-          {/* Direction Vector Radar Chart */}
-          <div className="bg-white rounded-xl p-6 shadow-lg">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+          
+          {/* Right Column (2/5 width) */}
+          <div className="lg:col-span-2 bg-white rounded-xl p-6 shadow-lg flex flex-col">
+            <h3 className="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">
               <TrendingUp className="text-purple-600" size={20} />
-              Direction Vector Analysis
+              Emotion Response Profile
             </h3>
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-semibold text-gray-700 mb-2">Base Vector (V0)</h4>
-                <div className="flex flex-wrap gap-2">
-                  {data.base_vector.map((value, i) => (
-                    <span key={i} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
-                      {data.emotions[i]}: {value}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-700 mb-2">User Direction Vector (V_user)</h4>
-                <div className="flex flex-wrap gap-2">
-                  {data.user_direction_vector.map((value, i) => (
-                    <span key={i} className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-sm">
-                      {data.emotions[i]}: {value.toFixed(1)}
-                    </span>
-                  ))}
-                </div>
-              </div>
+            <p className="text-sm text-gray-500 mb-4">
+              Comparing user's accuracy (red) against a healthy-normal baseline (blue).
+            </p>
+            <div className="relative flex-grow min-h-[400px]">
+              <EmotionRadarChart accuracies={data.accuracies} emotions={data.emotions} />
             </div>
-          </div>
-        </div>
-
-        {/* Accuracy Analysis */}
-        <div className="mt-8 bg-white rounded-xl p-6 shadow-lg">
-          <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <BarChart3 className="text-green-600" size={20} />
-            Emotion Accuracy Analysis
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {data.emotions.map(emotion => {
-              const accuracy = data.accuracies[emotion];
-              const total = data.totals[emotion];
-              const correct = data.corrects[emotion];
-              const needsTraining = accuracy < 60;
-              
-              return (
-                <div key={emotion} className={`rounded-lg p-4 ${getAccuracyBgColor(accuracy)}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold capitalize">{emotion}</h4>
-                    {needsTraining && <AlertTriangle className="text-red-600" size={16} />}
-                  </div>
-                  <div className="space-y-1">
-                    <p className={`text-2xl font-bold ${getAccuracyColor(accuracy)}`}>
-                      {accuracy.toFixed(1)}%
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {correct}/{total} correct
-                    </p>
-                    {needsTraining && (
-                      <p className="text-xs text-red-600 font-medium">
-                        Needs training
-                      </p>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
           </div>
         </div>
 
