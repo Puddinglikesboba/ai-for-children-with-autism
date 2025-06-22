@@ -34,6 +34,77 @@ CORS(app)  # Enable CORS for all routes
 if not os.path.exists('scores'):
     os.makedirs('scores')
 
+# Emotion categories
+EMOTIONS = ['angry', 'disgust', 'happy', 'sadness', 'neutral', 'fear', 'surprised']
+
+def load_all_scores(score_dir):
+    """Load all .npy files from scores directory and combine data"""
+    combined_data = []
+    
+    if not os.path.exists(score_dir):
+        return combined_data
+    
+    for filename in os.listdir(score_dir):
+        if filename.endswith('.npy'):
+            filepath = os.path.join(score_dir, filename)
+            try:
+                data = np.load(filepath)
+                combined_data.extend(data.tolist())
+            except Exception as e:
+                print(f"Error loading {filename}: {str(e)}")
+                continue
+    
+    return combined_data
+
+def compute_emotion_matrix(data):
+    """Compute 7x7 confusion matrix from emotion recognition data"""
+    # Initialize 7x7 matrix
+    M = np.zeros((7, 7), dtype=int)
+    
+    # Map emotions to indices
+    emotion_to_idx = {emotion: idx for idx, emotion in enumerate(EMOTIONS)}
+    
+    for correct, selected in data:
+        if correct in emotion_to_idx and selected in emotion_to_idx:
+            i = emotion_to_idx[correct]  # correct emotion (row)
+            j = emotion_to_idx[selected]  # user choice (column)
+            M[i][j] += 1
+    
+    return M
+
+def compute_direction_vector(V0, M):
+    """Compute user direction vector: V_user = V0 @ M"""
+    return V0 @ M
+
+def compute_accuracy(M):
+    """Compute accuracy for each emotion"""
+    accuracies = {}
+    totals = {}
+    corrects = {}
+    
+    for i, emotion in enumerate(EMOTIONS):
+        total = np.sum(M[i, :])  # Total questions for this emotion
+        correct = M[i, i]  # Correct answers (diagonal)
+        
+        totals[emotion] = int(total)
+        corrects[emotion] = int(correct)
+        accuracy_val = (correct / total * 100) if total > 0 else 0
+        accuracies[emotion] = float(accuracy_val)
+    
+    return accuracies, totals, corrects
+
+def compute_overall_stats(M):
+    """Compute overall statistics"""
+    total_questions = np.sum(M)
+    total_correct = np.sum(np.diag(M))
+    overall_accuracy = (total_correct / total_questions * 100) if total_questions > 0 else 0
+    
+    return {
+        'total_questions': int(total_questions),
+        'total_correct': int(total_correct),
+        'overall_accuracy': float(overall_accuracy)
+    }
+
 @app.route('/api/hello')
 def hello_world():
     return jsonify({'message': 'Hello from Flask!'})
@@ -45,9 +116,60 @@ def home():
         "status": "running",
         "endpoints": {
             "save_score_table": "POST /save_score_table",
-            "get_feedback_all": "GET /get_feedback_all"
+            "get_feedback_all": "GET /get_feedback_all",
+            "emotion_summary": "GET /api/emotion_summary"
         }
     })
+
+@app.route('/api/emotion_summary', methods=['GET'])
+def emotion_summary():
+    """API endpoint for emotion vector analysis summary"""
+    try:
+        # Load all score data
+        data = load_all_scores('scores')
+        
+        if not data:
+            return jsonify({
+                "error": "No data found",
+                "message": "No score files found in scores directory"
+            }), 404
+        
+        # Compute emotion matrix
+        M = compute_emotion_matrix(data)
+        
+        # Define base vector (all 1s)
+        V0 = np.ones(7)
+        
+        # Compute direction vector
+        V_user = compute_direction_vector(V0, M)
+        
+        # Compute accuracies
+        accuracies, totals, corrects = compute_accuracy(M)
+        
+        # Compute overall stats
+        overall_stats = compute_overall_stats(M)
+        
+        # Prepare response
+        response = {
+            "emotions": EMOTIONS,
+            "matrix": M.tolist(),
+            "base_vector": V0.tolist(),
+            "user_direction_vector": V_user.tolist(),
+            "accuracies": accuracies,
+            "totals": totals,
+            "corrects": corrects,
+            "overall_stats": overall_stats,
+            "data_points": len(data)
+        }
+        
+        return jsonify(response), 200
+        
+    except Exception as e:
+        app_log.error(f"Error in emotion_summary: {str(e)}", exc_info=True)
+        return jsonify({
+            "error": "Internal server error",
+            "message": "Failed to generate emotion summary"
+        }), 500
 
 @app.route('/save_score_table', methods=['POST'])
 def save_score_table():
@@ -146,92 +268,17 @@ def get_feedback_all():
                 elif accuracy <= 50:
                     weaknesses.append(f"{emotion} ({accuracy:.1f}%)")
         
-        # Build prompt for Gemini
-        prompt = f"""
-You are an AI assistant helping a child with autism improve their emotion recognition skills. 
-Based on the following game data, provide encouraging and constructive feedback.
+        # Local feedback only, no Gemini API
+        strengths_text = ', '.join(strengths) if strengths else "You're doing well across all emotions!"
+        weaknesses_text = ', '.join(weaknesses) if weaknesses else "Keep up the excellent work!"
 
-Game Statistics:
-- Total questions answered: {total_questions}
-- Overall accuracy: {overall_accuracy:.1f}%
-- Strengths: {', '.join(strengths) if strengths else 'None identified yet'}
-- Areas for improvement: {', '.join(weaknesses) if weaknesses else 'None - great job!'}
-
-Detailed performance by emotion:
-"""
-        
-        for emotion, stat in stats.items():
-            total = stat["correct"] + stat["wrong"]
-            if total > 0:
-                accuracy = (stat["correct"] / total) * 100
-                prompt += f"- {emotion.capitalize()}: {stat['correct']} correct, {stat['wrong']} incorrect ({accuracy:.1f}% accuracy)\n"
-        
-        prompt += f"""
-
-Please provide:
-1. A warm, encouraging message acknowledging their effort
-2. Specific praise for their strengths
-3. Gentle suggestions for improving weaker areas
-4. Motivational encouragement to keep practicing
-5. Keep the tone positive, supportive, and age-appropriate for children with autism
-
-Keep the response under 200 words and make it very encouraging and supportive.
-"""
-        
-        # Call Gemini API
-        gemini_api_key = os.getenv('GEMINI_API_KEY')
-        if not gemini_api_key:
-            # Fallback feedback if no API key
-            feedback = f"""
-Great job playing the emotion recognition game! You answered {total_questions} questions with {overall_accuracy:.1f}% accuracy overall.
-
-Your strengths: {', '.join(strengths) if strengths else 'You\'re doing well across all emotions!'}
-Areas to practice: {', '.join(weaknesses) if weaknesses else 'Keep up the excellent work!'}
-
-Remember, recognizing emotions takes practice, and you're doing wonderfully! Keep playing to improve your skills.
-"""
-        else:
-            try:
-                response = requests.post(
-                    "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {gemini_api_key}"
-                    },
-                    json={
-                        "contents": [{
-                            "parts": [{"text": prompt}]
-                        }]
-                    },
-                    timeout=10
-                )
-                
-                if response.status_code == 200:
-                    result = response.json()
-                    feedback = result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
-                    if not feedback:
-                        feedback = "Great job playing the emotion recognition game! Keep practicing to improve your skills."
-                else:
-                    # Fallback if API call fails
-                    feedback = f"""
-Great job playing the emotion recognition game! You answered {total_questions} questions with {overall_accuracy:.1f}% accuracy overall.
-
-Your strengths: {', '.join(strengths) if strengths else 'You\'re doing well across all emotions!'}
-Areas to practice: {', '.join(weaknesses) if weaknesses else 'Keep up the excellent work!'}
-
-Remember, recognizing emotions takes practice, and you're doing wonderfully! Keep playing to improve your skills.
-"""
-            except Exception as e:
-                print(f"Error calling Gemini API: {str(e)}")
-                # Fallback feedback
-                feedback = f"""
-Great job playing the emotion recognition game! You answered {total_questions} questions with {overall_accuracy:.1f}% accuracy overall.
-
-Your strengths: {', '.join(strengths) if strengths else 'You\'re doing well across all emotions!'}
-Areas to practice: {', '.join(weaknesses) if weaknesses else 'Keep up the excellent work!'}
-
-Remember, recognizing emotions takes practice, and you're doing wonderfully! Keep playing to improve your skills.
-"""
+        feedback_lines = [
+            f"Great job playing the emotion recognition game! You answered {total_questions} questions with {overall_accuracy:.1f}% accuracy overall.",
+            f"Your strengths: {strengths_text}",
+            f"Areas to practice: {weaknesses_text}",
+            "Remember, recognizing emotions takes practice, and you're doing wonderfully! Keep playing to improve your skills."
+        ]
+        feedback = "\n\n".join(feedback_lines)
         
         return jsonify({
             "feedback": feedback.strip(),
