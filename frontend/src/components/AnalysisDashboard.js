@@ -57,6 +57,7 @@ const EmotionRadarChart = ({ accuracies, emotions }) => {
   };
 
   const options = {
+    responsive: true,
     scales: {
       r: {
         angleLines: {
@@ -297,7 +298,7 @@ const AnalysisDashboard = () => {
           </div>
           
           {/* Right Column (2/5 width) */}
-          <div className="lg:col-span-2 bg-white rounded-xl p-6 shadow-lg flex flex-col">
+          <div className="lg:col-span-3 bg-white rounded-xl p-6 shadow-lg flex flex-col">
             <h3 className="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">
               <TrendingUp className="text-purple-600" size={20} />
               Emotion Response Profile
@@ -305,7 +306,10 @@ const AnalysisDashboard = () => {
             <p className="text-sm text-gray-500 mb-4">
               Comparing user's accuracy (red) against a healthy-normal baseline (blue).
             </p>
-            <div className="relative flex-grow min-h-[400px]">
+            <div
+              className="relative flex items-center justify-center"
+              style={{ width: '100%', height: '900px', maxWidth: '900px', margin: '0 auto' }}
+            >
               <EmotionRadarChart accuracies={data.accuracies} emotions={data.emotions} />
             </div>
           </div>
