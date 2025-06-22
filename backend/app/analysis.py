@@ -1,103 +1,101 @@
+import os
+import logging
 from typing import Optional
-import random
+from dotenv import load_dotenv
+import google.generativeai as genai
 
+# Load environment variables from .env file
+load_dotenv()
 
-def generate_psychological_analysis(caption: str, user_id: Optional[str] = None) -> str:
+# Configure logging
+logger = logging.getLogger(__name__)
+
+# --- Google Gemini Configuration ---
+# WARNING: The key below is hardcoded for a quick test.
+# This is NOT a safe practice. It is STRONGLY recommended to use a .env file.
+# The API key should be read from the GEMINI_API_KEY environment variable.
+try:
+    # For a quick test, we are temporarily hardcoding the key.
+    # The recommended way is: gemini_api_key = os.getenv("GEMINI_API_KEY")
+    gemini_api_key = "AIzaSyBhCPJEylbs-E_GmtLa7gF8zUp6LRJoNHA" #
+    
+    if not gemini_api_key:
+        raise ValueError("GEMINI_API_KEY not found.")
+    genai.configure(api_key=gemini_api_key)
+except ValueError as e:
+    logger.error(f"Gemini API Key configuration error: {e}")
+    genai = None
+
+# --- System Prompt for the Psychologist Agent ---
+SYSTEM_PROMPT = (
+    "You are a professional child psychologist specializing in sandbox therapy. "
+    "Your role is to analyze sandbox scenes created by children, particularly those with autism, "
+    "and provide insightful, empathetic, and constructive feedback. Your analysis should be "
+    "professional, easy to understand for parents, and focused on the child's emotional state, "
+    "creativity, and potential areas of interest or concern. Always maintain a positive and "
+    "supportive tone. Respond only with the analysis text, without any introductory or concluding "
+    "conversational phrases."
+)
+
+def generate_psychological_analysis(
+    caption: str, user_id: Optional[str] = None, custom_prompt: Optional[str] = None
+) -> str:
     """
-    Generate psychological analysis (currently using mock data)
+    Generate psychological analysis using Google's Gemini API.
     
     Args:
-        caption: Sandbox scene description
-        user_id: User ID (optional)
+        caption: Sandbox scene description.
+        user_id: User ID (optional, for future use).
+        custom_prompt: An optional user-provided prompt to guide the analysis.
         
     Returns:
-        str: Psychological analysis text
+        str: Psychological analysis text from the Gemini model.
     """
-    # TODO: Replace with real GPT model later
-    # For example: OpenAI GPT-4, Gemini, etc.
+    if not genai:
+        error_message = "Gemini API client is not configured. Please set the GEMINI_API_KEY in your .env file."
+        logger.error(error_message)
+        return error_message
+
+    model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-1.5-pro-latest")
     
-    # Mock psychological analysis templates
-    analysis_templates = [
-        f"""As a professional child psychologist, I observe that this sandbox scene demonstrates the child's rich inner world expression.
+    # Construct the final prompt for the user role
+    if custom_prompt:
+        user_prompt = f"{custom_prompt}\n\nBased on the instruction above, please provide a psychological analysis for the following sandbox scene: '{caption}'"
+        logger.info(f"Using custom prompt for analysis.")
+    else:
+        user_prompt = f"Please provide a psychological analysis for the following sandbox scene: '{caption}'"
+        logger.info(f"Using default prompt for analysis.")
 
-Scene Description: {caption}
-
-Psychological Analysis:
-1. **Spatial Layout**: The child chose to place the main elements in the center of the sandbox, indicating a strong egocentric consciousness, which is normal for their developmental stage.
-
-2. **Emotional Expression**: Through the {random.choice(['warm', 'harmonious', 'exploratory', 'protective'])} scene arrangement, the child may be expressing a desire or experience for {random.choice(['family', 'friendship', 'security', 'adventure'])}.
-
-3. **Development Recommendations**:
-   - Encourage the child to share thoughts and feelings during the creative process
-   - Observe the child's preferences and choices for different elements
-   - Promote language expression and emotional communication through sandbox play
-
-4. **Positive Observations**: The child's creativity and imagination are well demonstrated, and it's recommended to maintain this open form of expression.
-
-Please remember that each child is a unique individual, and this analysis is for reference only. Specific interpretation should be combined with the child's specific situation and background.""",
-
-        f"""Based on the sandbox scene you provided, I, as a child psychologist, offer the following professional interpretation:
-
-Scene Content: {caption}
-
-In-depth Analysis:
-**Symbolic Meaning Interpretation**:
-- The child expresses understanding of {random.choice(['growth', 'protection', 'exploration', 'connection'])} through {random.choice(['natural elements', 'architectural structures', 'animal images', 'human relationships'])}
-- This arrangement reflects the child's current level of {random.choice(['emotional state', 'cognitive level', 'social needs', 'sense of security'])}
-
-**Developmental Psychology Perspective**:
-- Conforms to the psychological development characteristics of {random.choice(['3-6 years', '6-9 years', '9-12 years'])} children
-- Demonstrates {random.choice(['creativity', 'logical thinking', 'emotional expression', 'spatial cognition'])} abilities
-
-**Intervention Recommendations**:
-1. Conduct sandbox play regularly to observe changing trends
-2. Guide the child to describe the creative process in language
-3. Pay attention to the child's repeated use of specific elements
-4. Encourage family participation to enhance parent-child interaction
-
-**Important Notes**: This analysis is based on a single observation. It's recommended to conduct a comprehensive assessment combining long-term observation and family background.""",
-
-        f"""Professional Child Psychological Analysis Report
-
-Sandbox Scene: {caption}
-
-**Psychological State Assessment**:
-Through this carefully arranged sandbox scene, we can see the rich expression of the child's inner world. The {random.choice(['harmonious', 'dynamic', 'static', 'complex'])} layout in the scene reflects the child's current psychological state.
-
-**Emotional Expression Analysis**:
-- The child may be experiencing {random.choice(['happiness', 'curiosity', 'worry', 'excitement'])} emotional state
-- High attention to {random.choice(['family relationships', 'friendship', 'learning', 'play'])}
-- Demonstrates {random.choice(['positive', 'cautious', 'open', 'protective'])} coping style
-
-**Development Recommendations**:
-1. **Short-term Goals**: Encourage the child to share creative ideas and enhance expression ability
-2. **Medium-term Goals**: Cultivate emotional management skills through sandbox play
-3. **Long-term Goals**: Establish healthy self-awareness and social skills
-
-**Parent Guidance**:
-- Be patient and don't rush to interpret the child's work
-- Create a safe environment for expression
-- Regularly record the child's sandbox changes
-- Maintain communication with professional psychologists
-
-Remember: Every child is unique, and this analysis needs to be understood in combination with specific circumstances."""
-    ]
+    logger.info(f"Requesting psychological analysis from Gemini model '{model_name}'...")
     
-    # Randomly select an analysis template
-    selected_template = random.choice(analysis_templates)
-    
-    return selected_template
+    try:
+        # Initialize the model with the system instruction
+        model = genai.GenerativeModel(
+            model_name=model_name,
+            system_instruction=SYSTEM_PROMPT
+        )
+        
+        # Generate content
+        response = model.generate_content(user_prompt)
+        
+        analysis = response.text
+        logger.info("Successfully received analysis from Gemini API.")
+        return analysis.strip()
+
+    except Exception as e:
+        logger.error(f"An unexpected error occurred while communicating with Gemini API: {e}")
+        return f"An unexpected error occurred while generating the analysis: {e}"
 
 
 def analyze_emotion_trend(analysis_history: list) -> dict:
     """
-    Analyze emotion trends (future feature)
+    Analyze emotion trends (future feature).
     
     Args:
-        analysis_history: List of historical analysis records
+        analysis_history: List of historical analysis records.
         
     Returns:
-        dict: Emotion trend analysis results
+        dict: Emotion trend analysis results.
     """
     # TODO: Implement emotion trend analysis logic
     return {
