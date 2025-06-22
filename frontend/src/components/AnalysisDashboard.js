@@ -31,15 +31,12 @@ ChartJS.register(
 );
 
 const EmotionRadarChart = ({ accuracies, emotions }) => {
-  // Per your sketch, we are focusing on 5 core emotions, with Neutral as the center.
-  const chartEmotions = ['angry', 'disgust', 'happy', 'sad', 'fear'];
-  
   const chartData = {
-    labels: chartEmotions.map(e => e.charAt(0).toUpperCase() + e.slice(1)),
+    labels: emotions.map(e => e.charAt(0).toUpperCase() + e.slice(1)),
     datasets: [
       {
         label: 'Healthy-Normal Response',
-        data: chartEmotions.map(() => 100), // Perfect score
+        data: emotions.map(() => 100),
         backgroundColor: 'rgba(54, 162, 235, 0.2)',
         borderColor: 'rgba(54, 162, 235, 1)',
         borderWidth: 2,
@@ -47,7 +44,7 @@ const EmotionRadarChart = ({ accuracies, emotions }) => {
       },
       {
         label: 'User Response (Autistic)',
-        data: chartEmotions.map(emotion => accuracies[emotion] || 0),
+        data: emotions.map(emotion => accuracies[emotion] || 0),
         backgroundColor: 'rgba(255, 99, 132, 0.2)',
         borderColor: 'rgba(255, 99, 132, 1)',
         borderWidth: 2,
@@ -71,20 +68,35 @@ const EmotionRadarChart = ({ accuracies, emotions }) => {
         suggestedMax: 100,
         pointLabels: {
           font: {
-            size: 14,
-            weight: 'bold'
+            size: 24,
+            weight: 'bold',
           },
-          color: '#1f2937'
+          color: '#1e293b',
         },
         ticks: {
           backdropColor: 'transparent',
-          color: '#6b7280',
+          color: '#1e293b',
+          font: {
+            size: 16,
+            weight: 'bold',
+          },
         }
       },
     },
     plugins: {
       legend: {
         position: 'top',
+        labels: {
+          color: '#1e293b',
+          font: {
+            size: 20,
+            weight: 'bold',
+          },
+          boxWidth: 40,
+          boxHeight: 20,
+          borderRadius: 4,
+          borderWidth: 3,
+        },
       },
       tooltip: {
         callbacks: {
