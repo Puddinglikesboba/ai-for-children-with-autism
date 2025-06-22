@@ -4,6 +4,7 @@ import './App.css';
 import './Sidebar.css';
 import Home from './components/Home';
 import FacialRecognition from './components/FacialRecognition';
+import EmotionGame from './components/EmotionGame';
 import Sandbox from './components/Sandbox';
 import AnalysisDashboard from './components/AnalysisDashboard';
 
@@ -22,7 +23,7 @@ function App() {
         </nav>
         <main className="main-content">
           <Routes>
-            <Route path="/facial-recognition" element={<FacialRecognition />} />
+            <Route path="/facial-recognition" element={<EmotionGame />} />
             <Route path="/sandbox" element={<Sandbox />} />
             <Route path="/analysis" element={<AnalysisDashboard />} />
             <Route path="/" element={<Home />} />

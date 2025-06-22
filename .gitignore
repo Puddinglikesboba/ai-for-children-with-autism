@@ -1,0 +1,11 @@
+# Log files
+*.log
+
+# local env files
+.env*.local
+.env
+
+# Temporary files
+*.tmp
+*.swp
+view_results.py 

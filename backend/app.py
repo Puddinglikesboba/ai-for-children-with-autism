@@ -5,19 +5,40 @@ import os
 from datetime import datetime
 import requests
 from dotenv import load_dotenv
+import logging
+from logging.handlers import RotatingFileHandler
 
 # Load environment variables
 load_dotenv()
+
+# --- Setup Logging ---
+log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s')
+log_file = 'backend.log'
+
+# Setup a rotating file handler
+my_handler = RotatingFileHandler(log_file, mode='a', maxBytes=5*1024*1024, 
+                                 backupCount=2, encoding=None, delay=0)
+my_handler.setFormatter(log_formatter)
+my_handler.setLevel(logging.INFO)
+
+# Get the root logger
+app_log = logging.getLogger('root')
+app_log.setLevel(logging.INFO)
+app_log.addHandler(my_handler)
+# --- End Logging Setup ---
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 # Create scores directory if it doesn't exist
-SCORES_DIR = "scores"
-if not os.path.exists(SCORES_DIR):
-    os.makedirs(SCORES_DIR)
+if not os.path.exists('scores'):
+    os.makedirs('scores')
 
-@app.route('/')
+@app.route('/api/hello')
+def hello_world():
+    return jsonify({'message': 'Hello from Flask!'})
+
+@app.route('/api/emotion-game')
 def home():
     return jsonify({
         "message": "Emotion Recognition Game Backend",
@@ -31,61 +52,33 @@ def home():
 @app.route('/save_score_table', methods=['POST'])
 def save_score_table():
     try:
-        # Get JSON data from request
         data = request.get_json()
         
-        # Validate required fields
         if not data or 'round' not in data or 'results' not in data:
-            return jsonify({
-                "error": "Missing required fields: round and results"
-            }), 400
+            app.logger.error("Invalid data: 'round' or 'results' key missing.")
+            return jsonify({"status": "error", "message": "Invalid data"}), 400
+
+        round_num = data.get('round')
+        results = data.get('results')
         
-        round_num = data['round']
-        results = data['results']
-        
-        # Validate data types
-        if not isinstance(round_num, int):
-            return jsonify({
-                "error": "round must be an integer"
-            }), 400
-        
-        if not isinstance(results, list):
-            return jsonify({
-                "error": "results must be a list"
-            }), 400
-        
-        # Validate results structure
-        valid_emotions = ['happy', 'sad', 'angry', 'surprised', 'neutral']
-        for i, result in enumerate(results):
-            if not isinstance(result, dict) or 'correct' not in result or 'selected' not in result:
-                return jsonify({
-                    "error": f"Invalid result structure at index {i}"
-                }), 400
-            
-            if result['correct'] not in valid_emotions or result['selected'] not in valid_emotions:
-                return jsonify({
-                    "error": f"Invalid emotion at index {i}"
-                }), 400
-        
-        # Convert results to 2D NumPy array
-        # Format: [["happy", "sad"], ["angry", "angry"], ...]
-        results_array = np.array([[result['correct'], result['selected']] for result in results])
-        
-        # Generate timestamp for unique filename
+        if not isinstance(round_num, int) or not isinstance(results, list):
+            app.logger.error("Invalid data format for round or results.")
+            return jsonify({"status": "error", "message": "Invalid data format"}), 400
+
+        # Create scores directory if it doesn't exist
+        if not os.path.exists('scores'):
+            os.makedirs('scores')
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"round{round_num}_{timestamp}.npy"
-        filepath = os.path.join(SCORES_DIR, filename)
+        filepath = os.path.join('scores', filename)
         
-        # Save to .npy file
-        np.save(filepath, results_array)
-        
-        return jsonify({
-            "message": "Saved",
-            "file": filepath
-        }), 200
+        np.save(filepath, np.array(results))
+        app.logger.info(f"Successfully saved scores to {filepath}")
+        return jsonify({"status": "success", "message": f"Scores saved to {filepath}"})
         
     except Exception as e:
-        print(f"Error saving results: {str(e)}")
+        app.logger.error(f"An error occurred while saving results: {str(e)}", exc_info=True)
         return jsonify({
             "error": "Internal server error",
             "message": "Failed to save results"
@@ -93,20 +86,21 @@ def save_score_table():
 
 @app.route('/get_feedback_all', methods=['GET'])
 def get_feedback_all():
+    app_log.info("Received request for /get_feedback_all")
     try:
         # Scan the scores/ folder and load all .npy files
         combined_data = []
         
-        if not os.path.exists(SCORES_DIR):
+        if not os.path.exists('scores'):
             return jsonify({
                 "feedback": "No game data found. Play some rounds to get personalized feedback!",
                 "stats": {}
             }), 200
         
         # Load all .npy files
-        for filename in os.listdir(SCORES_DIR):
+        for filename in os.listdir('scores'):
             if filename.endswith('.npy'):
-                filepath = os.path.join(SCORES_DIR, filename)
+                filepath = os.path.join('scores', filename)
                 try:
                     data = np.load(filepath)
                     combined_data.extend(data.tolist())
@@ -260,17 +254,26 @@ def health():
         "timestamp": datetime.now().isoformat()
     })
 
+def run_app():
+    """Configures and runs the Flask application."""
+    # Setup logging
+    # ... (logging setup code) ...
+
+    # Define the directory for scores
+    scores_dir = "scores"
+
+    port = int(os.environ.get('PORT', 5002))
+    app_log.info("🚀 Starting Emotion Recognition Game Backend...")
+    app_log.info(f"📁 Scores will be saved to: {os.path.abspath(scores_dir)}")
+    app_log.info(f"🌐 Server will run on: http://localhost:{port}")
+    app.run(debug=True, host='0.0.0.0', port=port, use_reloader=False)
+
 if __name__ == '__main__':
-    print("🚀 Starting Emotion Recognition Game Backend...")
-    print("📁 Scores will be saved to:", os.path.abspath(SCORES_DIR))
-    print("🌐 Server will run on: http://localhost:5001")
-    app.run(debug=True, host='0.0.0.0', port=5001) 
+    run_app() 
 
 
 
 
-@app.route('/api/hello')
-def hello_world():
-    return jsonify({'message': 'Hello from Flask!'})
+
 
 
